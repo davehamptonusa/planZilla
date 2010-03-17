@@ -48,10 +48,10 @@ var planZilla = {
           self.bz_tickets[value.bug_id].dependson = json_deep.bug[i].dependson ? json_deep.bug[i].dependson : [];
           self.bz_tickets[value.bug_id].blocked = json_deep.bug[i].blocked ? json_deep.bug[i].blocked: [];
           //clean out the unnessecary layers
-          $.each(self.bz_tickets[value.bug_id].dependson, function (i, d_value) {
+          $.each(self.bz_tickets[value.bug_id].dependson, function (i, value) {
             self.bz_tickets[value.bug_id].dependson[i] = this.text;
           });
-          $.each(self.bz_tickets[value.bug_id].blocked, function (i, b_value) {
+          $.each(self.bz_tickets[value.bug_id].blocked, function (i, value) {
             self.bz_tickets[value.bug_id].blocked[i] = this.text;
           });
           delete self.bz_tickets[value.bug_id].bug_id;
