@@ -176,7 +176,7 @@ $(document).ready(function () {
      click: function () {
        planZilla.find_buglist_tickets();
      },
-     'class': 'planZilla-icon'
+     'class': 'planZilla_icon'
 
   }));
 });

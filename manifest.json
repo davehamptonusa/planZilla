@@ -21,7 +21,7 @@
   //"chrome_url_overrides": {...},
   "content_scripts": [{
     "matches": ["https://bugzilla.vclk.net/buglist.cgi*"],
-    "css": ["planZilla.css"],
+    "css": ["css/planZilla.css"],
     "js":  ["jQuery.js", "jquery.xml2json.js", "planZilla.js"],
     "run_at": "document_start"
   }],
