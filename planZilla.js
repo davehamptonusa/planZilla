@@ -171,5 +171,12 @@ var planZilla = {
 };
 
 $(document).ready(function () {
-  planZilla.find_buglist_tickets();
+  $('#LeftSideBar').prepend($('<img/>', {
+     src: chrome.extension.getURL("images/transparent_icon.png"),
+     click: function () {
+       planZilla.find_buglist_tickets();
+     },
+     'class': 'planZilla-icon'
+
+  }));
 });

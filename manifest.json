@@ -6,8 +6,8 @@
   // Recommended
   "description": "A jQuery Based overlay to bugzilla that allows for project and release tracking and charting",
   "icons": {
-    "48": "icon48.png",
-    "128": "icon128.png"
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
   },
   //"default_locale": "en",
 
