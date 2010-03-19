@@ -9,15 +9,23 @@ div.pZ_buglist { /*0,0,1,1*/
   padding: 10px;
 }
 
-table.pZ_buglist { /*0,0,1,1*/
-  border:  3px #4b0607 double;
-  width: 100%;
+div.pZ_bugitem { /*0,0,1,1*/
+  border-top:  1px #4b0607 solid;
+  border-left:  1px #4b0607 solid;
+  margin-left: 5px;
+  margin-top: 5px;
 }
 
-table.pZ_buglist td { /*0,0,1,2*/
-  max-width: 200px;
+table.pZ_buglist { /*0,0,1,1*/
+  border:  3px #4b0607 double;
+  min-width: 100%;
+}
+
+div.pZ_bugitem table{ /*0,0,1,2*/
+  width: 100%;
+}
+div.pZ_bugitem td{ /*0,0,1,2*/
   overflow: hidden;
   white-space: nowrap;
-  padding-left: 10px;
 }
 

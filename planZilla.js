@@ -100,23 +100,21 @@ var planZilla = {
   },
   draw: function (bz_ticket) {
     var self = this,
-    dom = {},
-    padding = 0,
-    dom = self.create_dom.buglist_item.using(bz_ticket);
+    dom = {};
 
+    dom = self.create_dom.buglist_item.using(bz_ticket);
     if (bz_ticket.blocked.length > 0) {
       $.each(bz_ticket.blocked, function (key, value) {
-        var selector = $('table.pZ_buglist tr td a:contains(' + value + ')');
+        var selector = $('div.pZ_bugitem > table > tbody > tr > td > a:contains(' + value + ')');
         if (selector.length > 0) {
-          padding = parseInt($(selector).parent('td').css('paddingLeft')) + 5;
-          $('td:first', dom).css('paddingLeft', padding + 'px');
-          $(selector, 'table.pZ_buglist').parents('tr').after(dom);
+          $(selector).parents('div:first').append(dom);
           return false;
         }
       })
     }
     else {
-      $('table.pZ_buglist').append(dom);
+      $('td', dom).css('font-size', '1.8em');
+      $('table.pZ_buglist > tbody > tr > td').append(dom);
     }
   },
   create_dom: {
@@ -125,42 +123,57 @@ var planZilla = {
         'css': {
           background: 'url(' + chrome.extension.getURL("images/planZilla_bkg.png") + ') no-repeat'
         },
-        'class': 'pZ_buglist'
-      })
-      .append($('<table/>', {
-        'css': {
-          background: 'url(' + chrome.extension.getURL("images/transparent_bkg.png") + ') repeat'
-        },
-        'class': 'pZ_buglist'
-      }));
+        'class': 'pZ_buglist',
+        'html': $('<table/>', {
+          'css': {
+            background: 'url(' + chrome.extension.getURL("images/transparent_bkg.png") + ') repeat'
+          },
+          'class': 'pZ_buglist',
+          'html': $('<tbody/>', {
+            'html': $('<tr/>', {
+              'html': $('<td/>')
+            })
+          })
+        })
+      });
     },
     buglist_item: function () {
-      return $('<tr/>')
-      .append($('<td/>', {
-        html: ($('<a/>', {
-          href: 'https://bugzilla.vclk.net/show_bug.cgi?id=' + this.bug_id,
-          text: this.bug_id
-        }))
-      }))
-      .append($('<td/>', {
-        title: this.short_desc,
-        text: this.short_desc
-      }))
-      .append($('<td/>', {
-        text: this.bug_severity
-      }))
-      .append($('<td/>', {
-        text: this.assigned_to
-      }))
-      .append($('<td/>', {
-        text: this.target_milestone
-      }))
-      .append($('<td/>', {
-        text: this.bug_status
-      }))
-      .append($('<td/>', {
-        text: this.resolution
-      }));
+      return $('<div/>', {
+        'class': 'pZ_bugitem',
+        'html': $('<table/>', {
+          'html': $('<tr/>', {
+            'html': $('<td/>', {
+              'html': $('<a/>', {
+                'href': 'https://bugzilla.vclk.net/show_bug.cgi?id=' + this.bug_id,
+                'text': this.bug_id
+              })
+            })
+          })
+          .append($('<td/>', {
+            text: this.priority
+          }))
+          .append($('<td/>', {
+            title: this.short_desc,
+            text: this.short_desc
+          }))
+          .append($('<td/>', {
+            text: this.bug_severity
+          }))
+          .append($('<td/>', {
+            text: this.assigned_to
+          }))
+          .append($('<td/>', {
+            text: this.target_milestone
+          }))
+          .append($('<td/>', {
+            text: this.bug_status
+          }))
+          .append($('<td/>', {
+            text: this.resolution
+          }))
+          
+        })
+      })
     }
   }
 };
