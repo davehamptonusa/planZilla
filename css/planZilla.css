@@ -1,3 +1,23 @@
-.planZilla_icon { // 0,0,1,0
+
+.pZ_icon { /*0,0,1,0*/
   cursor:  pointer;
 }
+
+div.pZ_buglist { /*0,0,1,1*/
+  text-align: left;
+  margin-left: auto;
+  padding: 10px;
+}
+
+table.pZ_buglist { /*0,0,1,1*/
+  border:  3px #4b0607 double;
+  width: 100%;
+}
+
+table.pZ_buglist td { /*0,0,1,2*/
+  max-width: 200px;
+  overflow: hidden;
+  white-space: nowrap;
+  padding-left: 10px;
+}
+

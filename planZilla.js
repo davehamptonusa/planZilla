@@ -56,115 +56,110 @@ var planZilla = {
         timestamp = Number(new Date());
         found_tickets = [],
         array_mods = ['dependson', 'blocked'];
-        // json deep parses json as an object if there is only one
-        // so we need to nest it in an array
-        if (! self.is_array(json.bug)) {
-          json.bug = [json.bug];
-        }
-        $.each(json.bug, function (i, value) {
-          var bug_id = value.bug_id;
-          $('#MainContentBlock').append('working on ' + bug_id + '<br>');
-          self.bz_tickets[bug_id] = value;
-          self.bz_tickets[bug_id].dependson = json_deep.bug[i].dependson ? json_deep.bug[i].dependson : [];
-          self.bz_tickets[bug_id].blocked = json_deep.bug[i].blocked ? json_deep.bug[i].blocked: [];
-          self.bz_tickets[bug_id].timestamp = timestamp;
-          //clean out the unnessecary layers
-          $.each(array_mods, function (i, key) {
-            $.each(self.bz_tickets[bug_id][key], function (i, d_value) {
-              self.bz_tickets[bug_id][key][i] = this.text;
-              found_tickets.push(this.text);
+        if (json && json.bug) {
+          // json deep parses json as an object if there is only one
+          // so we need to nest it in an array
+          if (! self.is_array(json.bug)) {
+            json.bug = [json.bug];
+          }
+          $.each(json.bug, function (i, value) {
+            var bug_id;
+            /*if (! value || ! value.bug_id) {
+              return false;
+            }*/
+            bug_id = value.bug_id;
+            self.bz_tickets[bug_id] = value;
+            self.bz_tickets[bug_id].dependson = json_deep.bug[i].dependson ? json_deep.bug[i].dependson : [];
+            self.bz_tickets[bug_id].blocked = json_deep.bug[i].blocked ? json_deep.bug[i].blocked: [];
+            self.bz_tickets[bug_id].timestamp = timestamp;
+            //clean out the unnessecary layers
+            $.each(array_mods, function (i, key) {
+              $.each(self.bz_tickets[bug_id][key], function (i, d_value) {
+                self.bz_tickets[bug_id][key][i] = this.text;
+                found_tickets.push(this.text);
+              });
             });
+            self.draw(self.bz_tickets[bug_id]);
           });
-          $('#MainContentBlock').append('finished ' + self.bz_tickets[bug_id].bug_id + '<br>');
-          delete self.bz_tickets[bug_id].bug_id;
-        });
-        //recursively get the other tickets
-        self.get_tickets.call(self, found_tickets);
+          //recursively get the other tickets
+          self.get_tickets.call(self, found_tickets);
+        }
       }
     });
 
   },
   find_buglist_tickets: function () {
     var self = this,
-    initial_tickets = [];
+    dom = {};
+    self.initial_tickets = [];
     $('table.bz_buglist td.first-child a').each(function (i) {
-      initial_tickets.push($(this).text());
+      self.initial_tickets.push($(this).text());
     });
-    self.get_tickets(initial_tickets);
-    /*var pretend_ajax_response = {
-        id: $(this).text(),
-        priority: 'P1',
-        assignee: 'sample@sample.com',
-        status: 'NOT DONE!',
-        description: 'Sample Description'
-      },
-      new_dom = self.create_dom.dependency_div();
-      $(new_dom).css('background-color', $(this).parents('table.bz_buglist tr').css('background-color'));
-      $('div', new_dom).append(self.create_dom.dependency_table());
-      $('table', new_dom).append(self.create_dom.dependency_item.using(pretend_ajax_response));
-      $('th', new_dom).css({
-        fontSize: '10px',
-        fontWeight: 'bold',
-        borderBottom: '1px silver solid'
-      });
-      $(this).parents('table.bz_buglist tr').after(new_dom);*/
+    $('table.bz_buglist').replaceWith(self.create_dom.buglist_div());
+    self.get_tickets(self.initial_tickets);
+  },
+  draw: function (bz_ticket) {
+    var self = this,
+    dom = {},
+    padding = 0,
+    dom = self.create_dom.buglist_item.using(bz_ticket);
+
+    if (bz_ticket.blocked.length > 0) {
+      $.each(bz_ticket.blocked, function (key, value) {
+        var selector = $('table.pZ_buglist tr td a:contains(' + value + ')');
+        if (selector.length > 0) {
+          padding = parseInt($(selector).parent('td').css('paddingLeft')) + 5;
+          $('td:first', dom).css('paddingLeft', padding + 'px');
+          $(selector, 'table.pZ_buglist').parents('tr').after(dom);
+          return false;
+        }
+      })
+    }
+    else {
+      $('table.pZ_buglist').append(dom);
+    }
   },
   create_dom: {
-    dependency_div: function () {
-      var column_count = $('table.bz_buglist tr[class~=bz_row]:first td');
-      return $('<tr/>')
-      .append($('<td/>', {
-        colspan: 9//column_count.size()
-      }))
-      .contents().last()
-      .append($('<div/>', {
-        css: {
-          borderLeft: '1px solid silver',
-          borderTop: '1px silver solid',
-          textAlign: 'left',
-          marginLeft: 'auto'
+    buglist_div: function () {
+      return $('<div/>', {
+        'css': {
+          background: 'url(' + chrome.extension.getURL("images/planZilla_bkg.png") + ') no-repeat'
         },
-        width: '95%'
-      }))
-      .end().end();
+        'class': 'pZ_buglist'
+      })
+      .append($('<table/>', {
+        'css': {
+          background: 'url(' + chrome.extension.getURL("images/transparent_bkg.png") + ') repeat'
+        },
+        'class': 'pZ_buglist'
+      }));
     },
-    dependency_table: function () {
-      return $('<table/>', {width: '100%'})
-      .append('<tr/>')
-      .contents().last()
-      .append($('<th/>', {
-        text: 'ID'
-      }))
-      .append($('<th/>', {
-        text: 'Pri'
-      }))
-      .append($('<th/>', {
-        text: 'Assignee'
-      }))
-      .append($('<th/>', {
-        text: 'Status'
-      }))
-      .append($('<th/>', {
-        text: 'Description'
-      }))
-      .end().end();
-    },
-    dependency_item: function () {
+    buglist_item: function () {
       return $('<tr/>')
       .append($('<td/>', {
-        text: this.id
+        html: ($('<a/>', {
+          href: 'https://bugzilla.vclk.net/show_bug.cgi?id=' + this.bug_id,
+          text: this.bug_id
+        }))
       }))
       .append($('<td/>', {
-        text: this.priority
+        title: this.short_desc,
+        text: this.short_desc
       }))
       .append($('<td/>', {
-        text: this.assignee
+        text: this.bug_severity
       }))
       .append($('<td/>', {
-        text: this.status
+        text: this.assigned_to
       }))
       .append($('<td/>', {
-        text: this.description
+        text: this.target_milestone
+      }))
+      .append($('<td/>', {
+        text: this.bug_status
+      }))
+      .append($('<td/>', {
+        text: this.resolution
       }));
     }
   }
@@ -175,8 +170,11 @@ $(document).ready(function () {
      src: chrome.extension.getURL("images/transparent_icon.png"),
      click: function () {
        planZilla.find_buglist_tickets();
+       $('table.bz_buglist').css('background', function () {
+         var img = chrome.extension.getURL("images/planZilla_bkg.png");
+         return 'url(' + img + ') no-repeat';
+       });
      },
-     'class': 'planZilla_icon'
-
+     'class': 'pZ_icon'
   }));
 });
