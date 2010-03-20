@@ -29,6 +29,9 @@ var planZilla = {
         typeof value.splice === 'function' &&
         !(value.propertyIsEnumerable('length'));
   },
+  convert_to_array: function (item) {
+    return (! this.is_array(item)) ? [item] : item;
+  },
   bz_tickets: {},
   get_tickets: function (ticket_list) {
     var self = this,
@@ -59,14 +62,18 @@ var planZilla = {
         if (json && json.bug) {
           // json deep parses json as an object if there is only one
           // so we need to nest it in an array
-          if (! self.is_array(json.bug)) {
-            json.bug = [json.bug];
-          }
+          json.bug = self.convert_to_array(json.bug);
           $.each(json.bug, function (i, value) {
             var bug_id;
             /*if (! value || ! value.bug_id) {
               return false;
             }*/
+            if (value.long_desc) {
+              value.long_desc = self.convert_to_array(value.long_desc);
+            };
+            if (value.attachment) {
+              value.attachment = self.convert_to_array(value.attachment);
+            };
             bug_id = value.bug_id;
             self.bz_tickets[bug_id] = value;
             self.bz_tickets[bug_id].dependson = json_deep.bug[i].dependson ? json_deep.bug[i].dependson : [];
@@ -103,45 +110,45 @@ var planZilla = {
     dom = {};
 
     dom = self.create_dom.buglist_item.using(bz_ticket);
+    $('tr', dom).addClass('pZ_severity_' + bz_ticket.bug_severity);
     if (bz_ticket.blocked.length > 0) {
       $.each(bz_ticket.blocked, function (key, value) {
         var selector = $('div.pZ_bugitem > table > tbody > tr > td > a:contains(' + value + ')');
         if (selector.length > 0) {
-          $(selector).parents('div:first').append(dom);
+          $(selector).parents('div:first').append(dom).fadeIn();
           return false;
         }
       })
     }
     else {
-      $('td', dom).css('font-size', '1.8em');
-      $('table.pZ_buglist > tbody > tr > td').append(dom);
+      $('table', dom).parent().css({
+        'marginBottom': '1.1em',
+        'padding': '.5em',
+        'borderBottom': '1px solid #4b0607',
+        'background': 'url(' + chrome.extension.getURL("images/transparent_bkg.png") + ') repeat'
+      });
+      $('div.pZ_buglist').append(dom).fadeIn();
     }
   },
   create_dom: {
     buglist_div: function () {
       return $('<div/>', {
         'css': {
-          background: 'url(' + chrome.extension.getURL("images/planZilla_bkg.png") + ') no-repeat'
+          background: 'url(' + chrome.extension.getURL("images/planZilla_bkg.png") + ') repeat'
         },
         'class': 'pZ_buglist',
-        'html': $('<table/>', {
-          'css': {
-            background: 'url(' + chrome.extension.getURL("images/transparent_bkg.png") + ') repeat'
-          },
-          'class': 'pZ_buglist',
-          'html': $('<tbody/>', {
-            'html': $('<tr/>', {
-              'html': $('<td/>')
-            })
-          })
-        })
+        'html': $('<div/>')
       });
     },
     buglist_item: function () {
+      var attachment_length = (this.attachment) ? this.attachment.length : 0 ;
+      var long_desc_length = (this.long_desc) ? this.long_desc.length : 0 ;
       return $('<div/>', {
         'class': 'pZ_bugitem',
         'html': $('<table/>', {
+          'class': 'pZ_floatLeft',
           'html': $('<tr/>', {
+            'class': 'pZ_bugstatus_' + this.bug_status,
             'html': $('<td/>', {
               'html': $('<a/>', {
                 'href': 'https://bugzilla.vclk.net/show_bug.cgi?id=' + this.bug_id,
@@ -157,23 +164,47 @@ var planZilla = {
             text: this.short_desc
           }))
           .append($('<td/>', {
-            text: this.bug_severity
-          }))
-          .append($('<td/>', {
             text: this.assigned_to
           }))
           .append($('<td/>', {
             text: this.target_milestone
           }))
-          .append($('<td/>', {
-            text: this.bug_status
-          }))
-          .append($('<td/>', {
-            text: this.resolution
-          }))
-          
         })
       })
+      .append($('<div/>', {
+        'class': 'pZ_floatRight',
+        'html': $('<span/>', {
+          'class': 'pZ_bugStatus',
+          'css': {
+            'background': 'url(' + chrome.extension.getURL("images/bug_status/" + this.bug_status + ".png") + ') center no-repeat'
+          },
+          'title': this.bug_status,
+          'text': this.resolution
+        })
+      }))
+      .append($('<div/>', {
+        'class': 'pZ_floatRight',
+        'html': $('<span/>', {
+          'class': 'pZ_bugNotice',
+          'css': {
+            'background': 'url(' + chrome.extension.getURL("images/comments.png") + ') center no-repeat'
+          },
+          'text': long_desc_length
+        })
+      }))
+      .append($('<div/>', {
+        'class': 'pZ_floatRight',
+        'html': $('<span/>', {
+          'class': 'pZ_bugNotice',
+          'css': {
+            'background': 'url(' + chrome.extension.getURL("images/attachments.png") + ') center no-repeat'
+          },
+          'text': attachment_length
+        })
+      }))
+      .append($('<div/>', {
+        'class': 'clear'
+      }))
     }
   }
 };
