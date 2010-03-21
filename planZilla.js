@@ -110,7 +110,7 @@ var planZilla = {
     dom = {};
 
     dom = self.create_dom.buglist_item.using(bz_ticket);
-    $('tr', dom).addClass('pZ_severity_' + bz_ticket.bug_severity);
+    $('tr, div', dom).addClass('pZ_severity_' + bz_ticket.bug_severity);
     if (bz_ticket.blocked.length > 0) {
       $.each(bz_ticket.blocked, function (key, value) {
         var selector = $('div.pZ_bugitem > table > tbody > tr > td > a:contains(' + value + ')');
@@ -122,10 +122,11 @@ var planZilla = {
     }
     else {
       $('table', dom).parent().css({
-        'marginBottom': '1.1em',
-        'padding': '.5em',
+        'background': 'url(' + chrome.extension.getURL("images/transparent_bkg.png") + ') repeat',
         'borderBottom': '1px solid #4b0607',
-        'background': 'url(' + chrome.extension.getURL("images/transparent_bkg.png") + ') repeat'
+        'borderRight': '1px solid #4b0607',
+        'marginBottom': '1.1em',
+        'padding': '.5em'
       });
       $('div.pZ_buglist').append(dom).fadeIn();
     }
@@ -157,20 +158,15 @@ var planZilla = {
             })
           })
           .append($('<td/>', {
-            text: this.priority
-          }))
-          .append($('<td/>', {
-            title: this.short_desc,
-            text: this.short_desc
-          }))
-          .append($('<td/>', {
-            text: this.assigned_to
-          }))
-          .append($('<td/>', {
-            text: this.target_milestone
+            'text': this.priority
           }))
         })
       })
+      .append($('<div/>', {
+        'class': 'pZ_floatLeft pZ_short_desc',
+        'text': this.short_desc,
+        'title': this.short_desc
+      }))
       .append($('<div/>', {
         'class': 'pZ_floatRight',
         'html': $('<span/>', {
@@ -201,6 +197,16 @@ var planZilla = {
           },
           'text': attachment_length
         })
+      }))
+      .append($('<div/>', {
+        'class': 'pZ_floatRight pZ_target_milestone',
+        'text': this.target_milestone,
+        'title': this.target_milestone
+      }))
+      .append($('<div/>', {
+        'class': 'pZ_floatRight pZ_assigned_to',
+        'text': this.assigned_to,
+        'title': this.assigned_to
       }))
       .append($('<div/>', {
         'class': 'clear'
