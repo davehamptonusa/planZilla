@@ -1,3 +1,6 @@
+/*jslint white: true, browser: true, onevar: true, undef: true, nomen: true, eqeqeq: true, bitwise: true, regexp: true, newcap: true, immed: true,indent:2 */
+/*global $:true, chrome:true, jQuery:true */
+
 Function.prototype.using = Function.call;
 
 Object.spawn =  function (o, spec) {
@@ -32,8 +35,10 @@ var planZilla = {
   convert_to_array: function (item) {
     return (! this.is_array(item)) ? [item] : item;
   },
+  initial_dom: $('table.bz_buglist'),
   bz_tickets: {},
-  get_tickets: function (ticket_list) {
+  drawn_tickets: [],
+  get_tickets: function (ticket_list, callback) {
     var self = this,
     get_arguments = {},
     timestamp = Number(new Date());
@@ -53,10 +58,11 @@ var planZilla = {
       cache: false,
       traditional: true,
       type: 'POST',
+      async: false,
       success: function (xml, textStatus, XMLHttpRequest) {
         var json_deep = $.xml2json(xml, true),
         json = $.xml2json(xml),
-        timestamp = Number(new Date());
+        timestamp = Number(new Date()),
         found_tickets = [],
         array_mods = ['dependson', 'blocked'];
         if (json && json.bug) {
@@ -70,10 +76,10 @@ var planZilla = {
             }*/
             if (value.long_desc) {
               value.long_desc = self.convert_to_array(value.long_desc);
-            };
+            }
             if (value.attachment) {
               value.attachment = self.convert_to_array(value.attachment);
-            };
+            }
             bug_id = value.bug_id;
             self.bz_tickets[bug_id] = value;
             self.bz_tickets[bug_id].dependson = json_deep.bug[i].dependson ? json_deep.bug[i].dependson : [];
@@ -86,26 +92,53 @@ var planZilla = {
                 found_tickets.push(this.text);
               });
             });
-            self.draw(self.bz_tickets[bug_id]);
           });
           //recursively get the other tickets
           self.get_tickets.call(self, found_tickets);
+          if (callback) {
+            callback();
+          }
         }
       }
     });
-
   },
   find_buglist_tickets: function () {
-    var self = this,
-    dom = {};
+    var self = this;
     self.initial_tickets = [];
     $('table.bz_buglist td.first-child a').each(function (i) {
       self.initial_tickets.push($(this).text());
     });
     $('table.bz_buglist').replaceWith(self.create_dom.buglist_div());
     self.get_tickets(self.initial_tickets);
+    self.draw(self.get_top_level_tickets());
   },
-  draw: function (bz_ticket) {
+  get_top_level_tickets: function () {
+    var self = this,
+    tickets = [];
+    $.each(self.bz_tickets, function (key, ticket) {
+      if (ticket.blocked.length === 0) {
+        tickets.push(key);
+      }
+    });
+    return tickets;
+  },
+  draw: function (ticket_list) {
+    var self = this,
+    found_tickets = [];
+    ticket_list = $.map(ticket_list, function (value, index) {
+      return ($.inArray(value, self.drawn_tickets)) ? value : null;
+    });
+    $.each(ticket_list, function (i, value) {
+      self.draw_ticket(self.bz_tickets[value]);
+      self.drawn_tickets.push(value);
+      $.each(self.bz_tickets[value].dependson, function (d_i, d_value) {
+        found_tickets.push(d_value);
+      });
+    });
+    //recursively get the other tickets
+    self.draw.call(self, found_tickets);
+  },
+  draw_ticket: function (bz_ticket) {
     var self = this,
     dom = {};
 
@@ -118,7 +151,7 @@ var planZilla = {
           $(selector).parents('div:first').append(dom).fadeIn();
           return false;
         }
-      })
+      });
     }
     else {
       $('table', dom).parent().css({
@@ -142,8 +175,8 @@ var planZilla = {
       });
     },
     buglist_item: function () {
-      var attachment_length = (this.attachment) ? this.attachment.length : 0 ;
-      var long_desc_length = (this.long_desc) ? this.long_desc.length : 0 ;
+      var attachment_length = (this.attachment) ? this.attachment.length : 0,
+      long_desc_length = (this.long_desc) ? this.long_desc.length : 0;
       return $('<div/>', {
         'class': 'pZ_bugitem',
         'html': $('<table/>', {
@@ -210,21 +243,21 @@ var planZilla = {
       }))
       .append($('<div/>', {
         'class': 'clear'
-      }))
+      }));
     }
   }
 };
 
 $(document).ready(function () {
   $('#LeftSideBar').prepend($('<img/>', {
-     src: chrome.extension.getURL("images/transparent_icon.png"),
-     click: function () {
-       planZilla.find_buglist_tickets();
-       $('table.bz_buglist').css('background', function () {
-         var img = chrome.extension.getURL("images/planZilla_bkg.png");
-         return 'url(' + img + ') no-repeat';
-       });
-     },
-     'class': 'pZ_icon'
+    'src': chrome.extension.getURL("images/transparent_icon.png"),
+    'click': function () {
+      planZilla.find_buglist_tickets();
+      $('table.bz_buglist').css('background', function () {
+        var img = chrome.extension.getURL("images/planZilla_bkg.png");
+        return 'url(' + img + ') no-repeat';
+      });
+    },
+    'class': 'pZ_icon'
   }));
 });
