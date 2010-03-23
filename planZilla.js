@@ -37,7 +37,7 @@ var planZilla = {
   },
   initial_dom: $('table.bz_buglist'),
   bz_tickets: {},
-  drawn_tickets: [],
+  drawn_instance: {},
   get_tickets: function (ticket_list, callback) {
     var self = this,
     get_arguments = {},
@@ -123,20 +123,13 @@ var planZilla = {
     return tickets;
   },
   draw: function (ticket_list) {
-    var self = this,
-    found_tickets = [];
-    ticket_list = $.map(ticket_list, function (value, index) {
-      return ($.inArray(value, self.drawn_tickets)) ? value : null;
-    });
+    var self = this;
     $.each(ticket_list, function (i, value) {
       self.draw_ticket(self.bz_tickets[value]);
-      self.drawn_tickets.push(value);
       $.each(self.bz_tickets[value].dependson, function (d_i, d_value) {
-        found_tickets.push(d_value);
+        self.draw.call(self, [d_value]);
       });
     });
-    //recursively get the other tickets
-    self.draw.call(self, found_tickets);
   },
   draw_ticket: function (bz_ticket) {
     var self = this,
@@ -147,9 +140,9 @@ var planZilla = {
     if (bz_ticket.blocked.length > 0) {
       $.each(bz_ticket.blocked, function (key, value) {
         var selector = $('div.pZ_bugitem > table > tbody > tr > td > a:contains(' + value + ')');
-        if (selector.length > 0) {
-          $(selector).parents('div:first').append(dom).fadeIn();
-          return false;
+        if ((selector.length > 0) && (! self.drawn_instance['a' + bz_ticket.bug_id + 'b' + value])) {
+          self.drawn_instance['a' + bz_ticket.bug_id + 'b' + value] = true;
+          $(selector).parents('div:first').append(dom.clone()).fadeIn();
         }
       });
     }
