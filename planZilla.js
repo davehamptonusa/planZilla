@@ -23,6 +23,24 @@ Object.size = function (obj) {
   return size;
 };
 
+// Array Remove - By John Resig (MIT Licensed)
+Array.prototype.remove = function(from, to) {
+  var rest = this.slice((to || from) + 1 || this.length);
+  this.length = from < 0 ? this.length + from : from;
+  return this.push.apply(this, rest);
+};
+/*and here's some examples of how it could be used:
+
+// Remove the second item from the array
+array.remove(1);
+// Remove the second-to-last item from the array
+array.remove(-2);
+// Remove the second and third items from the array
+array.remove(1,2);
+// Remove the last and second-to-last items from the array
+array.remove(-2,-1);
+*/
+
 
 var planZilla = {
   is_array: function (value) {
@@ -102,19 +120,51 @@ var planZilla = {
       }
     });
   },
-  find_buglist_tickets: function () {
+  find_initial_tickets: function () {
     var self = this;
     self.initial_tickets = [];
-    $('table.bz_buglist td.first-child a').each(function (i) {
-      self.initial_tickets.push($(this).text());
-    });
-    $('table.bz_buglist').replaceWith(self.create_dom.buglist_div());
+    switch(window.location.pathname) {
+      case ("/show_bug.cgi"):
+        self.initial_tickets.push(window.location.search.replace(/\D/g, ''));
+        self.result_field = 'form[name="changeform"]'
+        break;
+      case ("/buglist.cgi"):
+        $('table.bz_buglist td.first-child a').each(function (i) {
+          self.initial_tickets.push($(this).text());
+        });
+        self.result_field = 'table.bz_buglist'
+        break;
+      default:
+        $('table.bz_buglist td.first-child a').each(function (i) {
+          self.initial_tickets.push($(this).text());
+        });
+        self.result_field = 'table.bz_buglist'
+    }
+    $(self.result_field).replaceWith(self.create_dom.buglist_div());
+    $('div.pZ_buglist').append(self.create_dom.loading_ajax());
     self.get_tickets(self.initial_tickets);
+    $('div.pZ_buglist').replaceWith(self.create_dom.buglist_div());
     self.draw(self.get_top_level_tickets());
   },
   get_top_level_tickets: function () {
     var self = this,
+    release_tickets = [],
     tickets = [];
+    //temporary for not displaying release tickets...
+    $.each(self.bz_tickets, function (key, ticket) {
+        if (ticket.target_milestone === 'PRD Complete') {
+          delete self.bz_tickets[key];
+          release_tickets.push(key);
+        }
+    });
+    $.each(self.bz_tickets, function (key, ticket) {
+      $.each(ticket.blocked, function (i, value) {
+        if ($.inArray(value, release_tickets) >= 0) {
+          ticket.blocked.remove(i);
+        }
+      });
+    });
+    //back to normal code
     $.each(self.bz_tickets, function (key, ticket) {
       if (ticket.blocked.length === 0) {
         tickets.push(key);
@@ -136,7 +186,10 @@ var planZilla = {
     dom = {};
 
     dom = self.create_dom.buglist_item.using(bz_ticket);
-    $('tr, div', dom).addClass('pZ_severity_' + bz_ticket.bug_severity);
+    $('tr, div', dom).addClass(
+      'pZ_severity_' + bz_ticket.bug_severity +
+      ' pZ_bugstatus_' + bz_ticket.bug_status
+    );
     if (bz_ticket.blocked.length > 0) {
       $.each(bz_ticket.blocked, function (key, value) {
         var selector = $('div.pZ_bugitem > table > tbody > tr > td > a:contains(' + value + ')');
@@ -166,6 +219,17 @@ var planZilla = {
         'class': 'pZ_buglist',
         'html': $('<div/>')
       });
+    },
+    loading_ajax: function () {
+      return $('<div/>', {
+        'css': {
+          textAlign: 'center'
+        },
+        'html': $('<img/>',  {
+          'src': chrome.extension.getURL("images/ajax-loader.gif")
+        })
+      })
+      .append('loading...');
     },
     buglist_item: function () {
       var attachment_length = (this.attachment) ? this.attachment.length : 0,
@@ -245,11 +309,7 @@ $(document).ready(function () {
   $('#LeftSideBar').prepend($('<img/>', {
     'src': chrome.extension.getURL("images/transparent_icon.png"),
     'click': function () {
-      planZilla.find_buglist_tickets();
-      $('table.bz_buglist').css('background', function () {
-        var img = chrome.extension.getURL("images/planZilla_bkg.png");
-        return 'url(' + img + ') no-repeat';
-      });
+      planZilla.find_initial_tickets();
     },
     'class': 'pZ_icon'
   }));
