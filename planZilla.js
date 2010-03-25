@@ -247,11 +247,13 @@ var planZilla = {
               })
             })
           })
-          .append($('<td/>', {
-            'text': this.priority
-          }))
         })
       })
+      .append($('<div/>', {
+        'class': 'pZ_floatLeft',
+        'text': this.priority,
+        'title': this.priority + ' - ' + this.bug_severity
+      }))
       .append($('<div/>', {
         'class': 'pZ_floatLeft pZ_short_desc',
         'text': this.short_desc,
