@@ -186,21 +186,21 @@ var planZilla = {
     dom = {};
 
     dom = self.create_dom.buglist_item.using(bz_ticket);
-    $('tr, div', dom).addClass(
-      'pZ_severity_' + bz_ticket.bug_severity +
-      ' pZ_bugstatus_' + bz_ticket.bug_status
-    );
+    //$('div', dom).addClass(
+    //  'pZ_severity_' + bz_ticket.bug_severity +
+    //  ' pZ_bugstatus_' + bz_ticket.bug_status
+    //);
     if (bz_ticket.blocked.length > 0) {
       $.each(bz_ticket.blocked, function (key, value) {
-        var selector = $('div.pZ_bugitem > table > tbody > tr > td > a:contains(' + value + ')');
+        var selector = $('.pZ_' + value);
         if ((selector.length > 0) && (! self.drawn_instance['a' + bz_ticket.bug_id + 'b' + value])) {
           self.drawn_instance['a' + bz_ticket.bug_id + 'b' + value] = true;
-          $(selector).parents('div:first').append(dom.clone()).fadeIn();
+          $(selector).append(dom.clone(true)).fadeIn();
         }
       });
     }
     else {
-      $('table', dom).parent().css({
+      $(dom).css({
         'background': 'url(' + chrome.extension.getURL("images/transparent_bkg.png") + ') repeat',
         'borderBottom': '1px solid #4b0607',
         'borderRight': '1px solid #4b0607',
@@ -231,47 +231,89 @@ var planZilla = {
       })
       .append('loading...');
     },
+    planZilla_box: function() {
+      return $('<div id="facebox"><div><h2><img src="' +  chrome.extension.getURL("images/text_icon.png") + '"></h2><div id="facebox_content"></div><button class="close"> Close </button></div></div>');
+    },
+    ticket_comments: function () {
+      var self = this,
+      pZ_box = $(planZilla.create_dom.planZilla_box());
+      $.each(self.long_desc, function (key, value) {
+        if (! value.thetext) {
+          return true;
+        }
+        var dom = $('<div/>')
+        .append($('<h3/>', {
+          'text': value.who
+        }))
+        .append($('<h5/>', {
+          'text': value.bug_when,
+          'css': {
+            'textAlign': 'right'
+          }
+        }))
+        .append($('<p/>', {
+          'html': value.thetext
+        }))
+        .append('<hr/>');
+        $('#facebox_content', pZ_box).append(dom);
+      });
+      return pZ_box;
+    },
     buglist_item: function () {
-      var attachment_length = (this.attachment) ? this.attachment.length : 0,
+      var self = this,
+      attachment_length = (this.attachment) ? this.attachment.length : 0,
       long_desc_length = (this.long_desc) ? this.long_desc.length : 0;
       return $('<div/>', {
-        'class': 'pZ_bugitem',
-        'html': $('<table/>', {
-          'class': 'pZ_floatLeft',
-          'html': $('<tr/>', {
-            'class': 'pZ_bugstatus_' + this.bug_status,
-            'html': $('<td/>', {
-              'html': $('<a/>', {
-                'href': 'https://bugzilla.vclk.net/show_bug.cgi?id=' + this.bug_id,
-                'text': this.bug_id
-              })
-            })
-          })
-        })
+
+        'class': 'pZ_bugitem  pZ_severity_' + self.bug_severity + ' pZ_bugstatus_' + self.bug_status + ' pZ_' + self.bug_id,
       })
       .append($('<div/>', {
         'class': 'pZ_floatLeft',
-        'text': this.priority,
-        'title': this.priority + ' - ' + this.bug_severity
+        'html': $('<a/>', {
+          'href': 'https://bugzilla.vclk.net/show_bug.cgi?id=' + self.bug_id,
+          'text': self.bug_id
+        })
+      }))
+      .append($('<div/>', {
+        'class': 'pZ_floatLeft',
+        'text': self.priority,
+        'title': self.priority + ' - ' + self.bug_severity
       }))
       .append($('<div/>', {
         'class': 'pZ_floatLeft pZ_short_desc',
-        'text': this.short_desc,
-        'title': this.short_desc
+        'text': self.short_desc,
+        'title': self.short_desc
       }))
       .append($('<div/>', {
         'class': 'pZ_floatRight',
         'html': $('<span/>', {
           'class': 'pZ_bugStatus',
           'css': {
-            'background': 'url(' + chrome.extension.getURL("images/bug_status/" + this.bug_status + ".png") + ') center no-repeat'
+            'background': 'url(' + chrome.extension.getURL("images/bug_status/" + self.bug_status + ".png") + ') center no-repeat'
           },
-          'title': this.bug_status,
-          'text': this.resolution
+          'title': self.bug_status,
+          'text': self.resolution
         })
       }))
       .append($('<div/>', {
-        'class': 'pZ_floatRight',
+        'class': 'pZ_floatRight pZ_comments',
+        'click': function () {
+          $(planZilla.create_dom.ticket_comments.using(self))
+          .appendTo('body')
+          .overlay({ 
+            expose: {
+              color: '#fff',
+              loadSpeed: 200,
+              opacity: 0.5
+            },
+            api: true,
+            speed: 'slow',
+            onClose: function () {
+              $('#facebox').next().remove();
+              $('#facebox').remove();
+            }
+          }).load();
+        },
         'html': $('<span/>', {
           'class': 'pZ_bugNotice',
           'css': {
@@ -292,13 +334,13 @@ var planZilla = {
       }))
       .append($('<div/>', {
         'class': 'pZ_floatRight pZ_target_milestone',
-        'text': this.target_milestone,
-        'title': this.target_milestone
+        'text': self.target_milestone,
+        'title': self.target_milestone
       }))
       .append($('<div/>', {
         'class': 'pZ_floatRight pZ_assigned_to',
-        'text': this.assigned_to,
-        'title': this.assigned_to
+        'text': self.assigned_to,
+        'title': self.assigned_to
       }))
       .append($('<div/>', {
         'class': 'clear'
@@ -315,4 +357,5 @@ $(document).ready(function () {
     },
     'class': 'pZ_icon'
   }));
+//  $.tools.overlay.conf.effect = "apple";
 });

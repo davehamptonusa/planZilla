@@ -15,8 +15,13 @@
   text-decoration: line-through;
 }
 
+.pZ_comments { /*0,0,1,0*/
+  cursor: pointer;
+}
+
 .pZ_floatLeft { /*0,0,1,0*/
   float: left;
+  padding: 0px 0px 0px 5px;
 }
 
 .pZ_floatRight { /*0,0,1,0*/
@@ -76,13 +81,15 @@ div.pZ_buglist { /*0,0,1,1*/
 div.pZ_bugitem { /*0,0,1,1*/
   border-top:  1px #4b0607 solid;
   border-left:  1px #4b0607 solid;
+  border-radius-topleft: 5px;
+  -moz-border-radius-topleft: 5px;
+  -webkit-border-top-left-radius: 5px;
+  font-size: 13px;
   margin-left: 5px;
   margin-top: 5px;
-  /*font-size: 1.2em;*/
-  font-size: 13px;
-  -webkit-border-top-left-radius: 5px;
-  -moz-border-radius-topleft: 5px;
-  border-radius-topleft: 5px;
+  overflow: hidden;
+  padding: 0px 0px 0px 0px;
+  white-space: nowrap;
 }
 
 span.pZ_bugNotice { /*0,0,1,1*/
@@ -102,12 +109,51 @@ span.pZ_bugStatus { /*0,0,1,1*/
   text-align: center;
 }
 
-div.pZ_bugitem table{ /*0,0,1,2*/
-  max-width: 40%;
-}
-div.pZ_bugitem td{ /*0,0,1,2*/
-  overflow: hidden;
-  white-space: nowrap;
-  font-size: 13px;
+#facebox {
+  /* overlay is hidden before loading 
+  display:none;*/
+  /* standard decorations */
+  width:97%;
+  max-height:80%;
+  background-color: rgba(200, 200, 200, 0.4);
+  border:10px solid #666;
+  /* for modern browsers use semi-transparent color on the border. nice! */
+  border:10px solid rgba(82, 82, 82, 0.7);
+  /* hot CSS3 features for mozilla and webkit-based browsers (rounded borders) */
+  -moz-border-radius:8px;
+  -webkit-border-radius:8px;
 }
 
+#facebox_content {
+  height: 400px;
+  overflow-y: auto;
+  padding: 1em;
+  margin: 1em;
+  background-color: #ffffff;
+}
+
+#facebox > div {
+  padding: 10px;
+  font-family:"lucida grande",tahoma,verdana,arial,sans-serif
+}
+#facebox h2 {
+  margin:-10px;
+  margin-bottom:0px;
+  color:#fff;
+  background-color:#fab20b;
+  padding:5px 10px;
+  font-size:20px;
+}
+
+button {
+  outline:1px outset #999;  
+  border:1px solid #fff;  
+  background-color:#222;
+  color:#fff;
+  height:24px;
+  -moz-border-radius:4px;
+  -moz-outline-radius:4px;
+  cursor:pointer;
+  font-size:11px;
+  margin-left: 1em;
+}
