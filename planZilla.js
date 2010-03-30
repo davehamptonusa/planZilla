@@ -53,6 +53,7 @@ var planZilla = {
   convert_to_array: function (item) {
     return (! this.is_array(item)) ? [item] : item;
   },
+  parse_url: /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig,
   initial_dom: $('table.bz_buglist'),
   bz_tickets: {},
   drawn_instance: {},
@@ -242,17 +243,34 @@ var planZilla = {
           return true;
         }
         var dom = $('<div/>')
-        .append($('<h3/>', {
-          'text': value.who
-        }))
-        .append($('<h5/>', {
-          'text': value.bug_when,
+        .append($('<div/>', {
           'css': {
-            'textAlign': 'right'
-          }
+            'float': 'left'
+          },
+          'html': $('<h3/>', {
+            'text': value.who,
+          })
         }))
-        .append($('<p/>', {
-          'html': value.thetext
+        .append($('<div/>', {
+          'css': {
+            'float': 'right'
+          },
+          'html': $('<h5/>', {
+            'text': value.bug_when,
+          })
+        }))
+        .append($('<div/>', {
+          'css': {
+            'clear': 'both',
+            'padding': '0em 1em 1em 1em'
+          },
+          'html': $('<p/>', {
+            'html': function () {
+              var display_text = value.thetext.replace(/\n/g,'<br>');
+              display_text = display_text.replace(planZilla.parse_url, "<a href='$1'>$1</a>");
+              return display_text;
+            }
+          })
         }))
         .append('<hr/>');
         $('#facebox_content', pZ_box).append(dom);
@@ -354,6 +372,7 @@ $(document).ready(function () {
     'src': chrome.extension.getURL("images/transparent_icon.png"),
     'click': function () {
       planZilla.find_initial_tickets();
+      $('#banner-name').css('backgroundImage', 'url(' + chrome.extension.getURL("images/Replacement_Header.png") + ')');
     },
     'class': 'pZ_icon'
   }));
