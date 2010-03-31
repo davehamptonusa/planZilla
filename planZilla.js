@@ -141,6 +141,13 @@ var planZilla = {
         });
         self.result_field = 'table.bz_buglist'
     }
+    $('div.pZ_bugitem').live('mouseover mouseout', function(event) {
+      if (event.type == 'mouseover') {
+        $(this).addClass('pZ_bugHighlight');
+      } else {
+        $(this).removeClass('pZ_bugHighlight');
+      }
+    });
     $(self.result_field).replaceWith(self.create_dom.buglist_div());
     $('div.pZ_buglist').append(self.create_dom.loading_ajax());
     self.get_tickets(self.initial_tickets);
@@ -187,10 +194,6 @@ var planZilla = {
     dom = {};
 
     dom = self.create_dom.buglist_item.using(bz_ticket);
-    //$('div', dom).addClass(
-    //  'pZ_severity_' + bz_ticket.bug_severity +
-    //  ' pZ_bugstatus_' + bz_ticket.bug_status
-    //);
     if (bz_ticket.blocked.length > 0) {
       $.each(bz_ticket.blocked, function (key, value) {
         var selector = $('.pZ_' + value);
@@ -201,13 +204,6 @@ var planZilla = {
       });
     }
     else {
-      $(dom).css({
-        'background': 'url(' + chrome.extension.getURL("images/transparent_bkg.png") + ') repeat',
-        'borderBottom': '1px solid #4b0607',
-        'borderRight': '1px solid #4b0607',
-        'marginBottom': '1.1em',
-        'padding': '.5em'
-      });
       $('div.pZ_buglist').append(dom).fadeIn();
     }
   },
@@ -233,7 +229,7 @@ var planZilla = {
       .append('loading...');
     },
     planZilla_box: function() {
-      return $('<div id="facebox"><div><h2><img src="' +  chrome.extension.getURL("images/text_icon.png") + '"></h2><div id="facebox_content"></div><button class="close"> Close </button></div></div>');
+      return $('<div id="facebox"><div><h2><img src="' +  chrome.extension.getURL("images/text_icon.png") + '"><button class="close"> Close </button></h2><div id="facebox_content"></div></div></div>');
     },
     ticket_comments: function () {
       var self = this,
@@ -373,6 +369,7 @@ $(document).ready(function () {
     'click': function () {
       planZilla.find_initial_tickets();
       $('#banner-name').css('backgroundImage', 'url(' + chrome.extension.getURL("images/Replacement_Header.png") + ')');
+      $('a, h1, strong, b').css('color', '#4b0607');
     },
     'class': 'pZ_icon'
   }));
