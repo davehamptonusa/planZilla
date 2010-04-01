@@ -57,7 +57,7 @@ var planZilla = {
   initial_dom: $('table.bz_buglist'),
   bz_tickets: {},
   drawn_instance: {},
-  PRD_found: false,
+  release_found: false,
   get_tickets: function (ticket_list, callback) {
     var self = this,
     get_arguments = {},
@@ -94,7 +94,7 @@ var planZilla = {
             /*if (! value || ! value.bug_id) {
               return false;
             }*/
-            if (value.target_milestone !== 'PRD Complete' || (value.target_milestone === 'PRD Complete' && self.PRD_found === false)) {
+            if (value.target_milestone !== 'PRD Complete' || (value.target_milestone === 'PRD Complete' && self.release_found === false)) {
               if (value.long_desc) {
                 value.long_desc = self.convert_to_array(value.long_desc);
               }
@@ -108,7 +108,7 @@ var planZilla = {
               self.bz_tickets[bug_id].timestamp = timestamp;
               //stop propogation to other release tickets
               if (value.target_milestone === 'PRD Complete') {
-                self.PRD_found = true;
+                self.release_found = true;
               }
               //clean out the unnessecary layers
               $.each(array_mods, function (i, key) {
@@ -156,9 +156,14 @@ var planZilla = {
       }
     });
     $(self.result_field).replaceWith(self.create_dom.buglist_div());
-    $('div.pZ_buglist').append(self.create_dom.loading_ajax());
     self.get_tickets(self.initial_tickets);
-    $('div.pZ_buglist').replaceWith(self.create_dom.buglist_div());
+    $('div.pZ_bugitem').live('mouseover mouseout', function(event) {
+      if (event.type == 'mouseover') {
+        $(this).addClass('pZ_bugHighlight');
+      } else {
+        $(this).removeClass('pZ_bugHighlight');
+      }
+    });
     self.draw(self.get_top_level_tickets());
   },
   get_top_level_tickets: function () {
@@ -211,6 +216,7 @@ var planZilla = {
       });
     }
     else {
+      $(dom).addClass('pZ_bugNormal');
       $('div.pZ_buglist').append(dom).fadeIn();
     }
   },
