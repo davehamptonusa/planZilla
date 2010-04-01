@@ -57,6 +57,7 @@ var planZilla = {
   initial_dom: $('table.bz_buglist'),
   bz_tickets: {},
   drawn_instance: {},
+  PRD_found: false,
   get_tickets: function (ticket_list, callback) {
     var self = this,
     get_arguments = {},
@@ -93,24 +94,30 @@ var planZilla = {
             /*if (! value || ! value.bug_id) {
               return false;
             }*/
-            if (value.long_desc) {
-              value.long_desc = self.convert_to_array(value.long_desc);
-            }
-            if (value.attachment) {
-              value.attachment = self.convert_to_array(value.attachment);
-            }
-            bug_id = value.bug_id;
-            self.bz_tickets[bug_id] = value;
-            self.bz_tickets[bug_id].dependson = json_deep.bug[i].dependson ? json_deep.bug[i].dependson : [];
-            self.bz_tickets[bug_id].blocked = json_deep.bug[i].blocked ? json_deep.bug[i].blocked: [];
-            self.bz_tickets[bug_id].timestamp = timestamp;
-            //clean out the unnessecary layers
-            $.each(array_mods, function (i, key) {
-              $.each(self.bz_tickets[bug_id][key], function (i, d_value) {
-                self.bz_tickets[bug_id][key][i] = this.text;
-                found_tickets.push(this.text);
+            if (value.target_milestone !== 'PRD Complete' || (value.target_milestone === 'PRD Complete' && self.PRD_found === false)) {
+              if (value.long_desc) {
+                value.long_desc = self.convert_to_array(value.long_desc);
+              }
+              if (value.attachment) {
+                value.attachment = self.convert_to_array(value.attachment);
+              }
+              bug_id = value.bug_id;
+              self.bz_tickets[bug_id] = value;
+              self.bz_tickets[bug_id].dependson = json_deep.bug[i].dependson ? json_deep.bug[i].dependson : [];
+              self.bz_tickets[bug_id].blocked = json_deep.bug[i].blocked ? json_deep.bug[i].blocked: [];
+              self.bz_tickets[bug_id].timestamp = timestamp;
+              //stop propogation to other release tickets
+              if (value.target_milestone === 'PRD Complete') {
+                self.PRD_found = true;
+              }
+              //clean out the unnessecary layers
+              $.each(array_mods, function (i, key) {
+                $.each(self.bz_tickets[bug_id][key], function (i, d_value) {
+                  self.bz_tickets[bug_id][key][i] = this.text;
+                  found_tickets.push(this.text);
+                });
               });
-            });
+            }
           });
           //recursively get the other tickets
           self.get_tickets.call(self, found_tickets);
