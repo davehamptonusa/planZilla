@@ -14,6 +14,10 @@
   background-color: rgba(254, 236, 101, 0.25);
 }
 
+.pZ_bugNormal { /*0,0,1,0*/
+  background-color: rgba(255, 250, 245, 0.75);
+}
+
 .pZ_bugstatus_CLOSED { /*0,0,1,0*/
   text-decoration: line-through;
 }
@@ -113,7 +117,6 @@ span.pZ_bugStatus { /*0,0,1,1*/
 }
 
 div.pZ_buglist > div.pZ_bugitem { /* 0,0,2,2 */
-  background-color: rgba(255, 250, 245, 0.75);
   border-bottom: 1px solid #4b0607;
   border-right: 1px solid #4b0607;
   margin-bottom: 1.1em;

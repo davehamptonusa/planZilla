@@ -53,12 +53,22 @@ var planZilla = {
   convert_to_array: function (item) {
     return (! this.is_array(item)) ? [item] : item;
   },
+  'sort_by_priority': function (tickets) {
+     var self = this;
+
+     tickets.sort(function (a,b) {
+        a = (self.bz_tickets[a].priority).replace('P','');
+        b = (self.bz_tickets[b].priority).replace('P','');
+        return (a - b);
+      });
+  },
   parse_url: /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig,
   initial_dom: $('table.bz_buglist'),
   bz_tickets: {},
   drawn_instance: {},
   release_found: false,
-  get_tickets: function (ticket_list, callback) {
+  current_ajax_requests: 0,
+  get_tickets: function (ticket_list) {
     var self = this,
     get_arguments = {},
     timestamp = Number(new Date());
@@ -71,14 +81,16 @@ var planZilla = {
       excludefield: 'attachmentdata',
       id: ticket_list
     };
-
+    if (ticket_list[0]) {
+      self.current_ajax_requests++;
+    }
     $.ajax({
       url: 'https://bugzilla.vclk.net/show_bug.cgi',
       data: get_arguments,
       cache: false,
       traditional: true,
       type: 'POST',
-      async: false,
+      async: true,
       success: function (xml, textStatus, XMLHttpRequest) {
         var json_deep = $.xml2json(xml, true),
         json = $.xml2json(xml),
@@ -120,9 +132,13 @@ var planZilla = {
             }
           });
           //recursively get the other tickets
-          self.get_tickets.call(self, found_tickets);
-          if (callback) {
-            callback();
+          self.current_ajax_requests--;
+          if (found_tickets[0]) {
+            self.get_tickets.call(self, found_tickets);
+          }
+          if (self.current_ajax_requests === 0) {
+            $('div.pZ_buglist').replaceWith(self.create_dom.buglist_div());
+            self.draw(self.get_top_level_tickets());
           }
         }
       }
@@ -156,15 +172,8 @@ var planZilla = {
       }
     });
     $(self.result_field).replaceWith(self.create_dom.buglist_div());
+    $('div.pZ_buglist').append(self.create_dom.loading_ajax());
     self.get_tickets(self.initial_tickets);
-    $('div.pZ_bugitem').live('mouseover mouseout', function(event) {
-      if (event.type == 'mouseover') {
-        $(this).addClass('pZ_bugHighlight');
-      } else {
-        $(this).removeClass('pZ_bugHighlight');
-      }
-    });
-    self.draw(self.get_top_level_tickets());
   },
   get_top_level_tickets: function () {
     var self = this,
@@ -190,12 +199,16 @@ var planZilla = {
         tickets.push(key);
       }
     });
+    self.sort_by_priority(tickets);
     return tickets;
   },
   draw: function (ticket_list) {
-    var self = this;
+    var self = this,
+    found_tickets = [];
+
     $.each(ticket_list, function (i, value) {
       self.draw_ticket(self.bz_tickets[value]);
+      self.sort_by_priority(self.bz_tickets[value].dependson);
       $.each(self.bz_tickets[value].dependson, function (d_i, d_value) {
         self.draw.call(self, [d_value]);
       });
@@ -232,6 +245,7 @@ var planZilla = {
     },
     loading_ajax: function () {
       return $('<div/>', {
+        'id': 'pZ_loadStatus',
         'css': {
           textAlign: 'center'
         },
@@ -239,7 +253,7 @@ var planZilla = {
           'src': chrome.extension.getURL("images/ajax-loader.gif")
         })
       })
-      .append('loading...');
+      .append(planZilla.stupid_search_phrase());
     },
     planZilla_box: function() {
       return $('<div id="facebox"><div><h2><img src="' +  chrome.extension.getURL("images/text_icon.png") + '"><button class="close"> Close </button></h2><div id="facebox_content"></div></div></div>');
@@ -373,6 +387,33 @@ var planZilla = {
         'class': 'clear'
       }));
     }
+  },
+  'stupid_search_phrase': function () {
+    var sayings = [
+      'grooving through the Bugzilla database looking for tickets...',
+      'jive talking my way through the Bugzilla database...',
+      'putting on my Disco boots to look through Bugzilla...',
+      'trying to feather my hair while searching Bugzilla...',
+      'having my pet rocks look for tickets in BZ...',
+      'laughing at the fact that you have to wait while I search Bugzilla...',
+      'taking time to smell the flowers...  while you wait...  OK.  Back to work.',
+      'Thinking just how awesome Dave is while I look for your stupid tickets.',
+      'Just think, I could have been a cool video game, but instead Im doing this...  for you.. (sigh...)',
+      'Swear at me all you want.  Im a computer and dont have feelings.  You do - and youre ugly',
+      'I think something is wrong with my GPP interface...  looking for tickets...',
+      'Always its the same thing with you!  Go look for tickets!  just a second...',
+      'Ummm...  I was in the bathroom...  Could you wait a second?',
+      'Hey look!  While I was looking for tickets, I found a quarter!',
+      'Are you drinking again?  Only a Drunk would want me to look for THOSE tickets!',
+      'Seriously?  You think clicking a few buttons makes you a genius?  Im doing all the work here...',
+      'Oh look!  Mr. Computer Operator is trying to look competent.  (hint: its not working)',
+      'Once again, getting somebody else to do your job.  You can be replaced, you know...',
+      'God I hate you.  Didnt you just search for that?  Cant you remember it...  jeez...',
+      'Why dont you go use Excel?  Its more your level...',
+      'Youre wearing that?  Who dresses you?  Seriously, you are an embarassment...',
+      'Please stop refreshing the page just to look at this text.  Searching BZ tickets is hard...'
+    ];
+    return sayings[Math.floor(Math.random()*(sayings.length))];
   }
 };
 
