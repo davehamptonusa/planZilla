@@ -66,6 +66,7 @@ var planZilla = {
   initial_dom: $('table.bz_buglist'),
   bz_tickets: {},
   drawn_instance: {},
+  release_tickets: {},
   release_found: false,
   current_ajax_requests: 0,
   get_tickets: function (ticket_list) {
@@ -103,9 +104,9 @@ var planZilla = {
           json.bug = self.convert_to_array(json.bug);
           $.each(json.bug, function (i, value) {
             var bug_id;
-            /*if (! value || ! value.bug_id) {
-              return false;
-            }*/
+            if (value.target_milestone === 'PRD Complete') {
+              self.release_tickets[value.bug_id] = value.short_desc.replace('Search123_', '');
+            }
             if (value.target_milestone !== 'PRD Complete' || (value.target_milestone === 'PRD Complete' && self.release_found === false)) {
               if (value.long_desc) {
                 value.long_desc = self.convert_to_array(value.long_desc);
@@ -177,19 +178,18 @@ var planZilla = {
   },
   get_top_level_tickets: function () {
     var self = this,
-    release_tickets = [],
     tickets = [];
     //temporary for not displaying release tickets...
     $.each(self.bz_tickets, function (key, ticket) {
         if (ticket.target_milestone === 'PRD Complete') {
           delete self.bz_tickets[key];
-          release_tickets.push(key);
         }
     });
     $.each(self.bz_tickets, function (key, ticket) {
       $.each(ticket.blocked, function (i, value) {
-        if ($.inArray(value, release_tickets) >= 0) {
+        if (self.release_tickets[value]) {
           ticket.blocked.remove(i);
+          ticket.release_name = self.release_tickets[value];
         }
       });
     });
@@ -229,8 +229,12 @@ var planZilla = {
       });
     }
     else {
-      $(dom).addClass('pZ_bugNormal');
-      $('div.pZ_buglist').append(dom).fadeIn();
+      $('div.pZ_buglist')
+      .append($('<div/>', {
+        'class': 'pZ_bugNormal',
+        'html': $(dom)
+      }))
+      .fadeIn();
     }
   },
   create_dom: {
@@ -247,7 +251,8 @@ var planZilla = {
       return $('<div/>', {
         'id': 'pZ_loadStatus',
         'css': {
-          textAlign: 'center'
+          textAlign: 'center',
+          fontWeight: 'bold'
         },
         'html': $('<img/>',  {
           'src': chrome.extension.getURL("images/ajax-loader.gif")
@@ -271,7 +276,7 @@ var planZilla = {
             'float': 'left'
           },
           'html': $('<h3/>', {
-            'text': value.who,
+            'text': '#' + key + ' - ' + value.who,
           })
         }))
         .append($('<div/>', {
@@ -303,20 +308,31 @@ var planZilla = {
     buglist_item: function () {
       var self = this,
       attachment_length = (this.attachment) ? this.attachment.length : 0,
-      long_desc_length = (this.long_desc) ? this.long_desc.length : 0;
+      long_desc_length = 0;
+
+      long_desc_length = (self.long_desc) ? (function () {
+        var counter = 0;
+
+        $.each(self.long_desc, function (index, value) {
+          if (value.thetext !== '') {
+            counter ++;
+          }
+        });
+        return counter;
+      }()) : 0;
       return $('<div/>', {
 
         'class': 'pZ_bugitem  pZ_severity_' + self.bug_severity + ' pZ_bugstatus_' + self.bug_status + ' pZ_' + self.bug_id,
       })
       .append($('<div/>', {
-        'class': 'pZ_floatLeft',
+        'class': 'pZ_bugNum pZ_floatLeft',
         'html': $('<a/>', {
           'href': 'https://bugzilla.vclk.net/show_bug.cgi?id=' + self.bug_id,
           'text': self.bug_id
         })
       }))
       .append($('<div/>', {
-        'class': 'pZ_floatLeft',
+        'class': 'pZ_floatLeft pZ_priority',
         'text': self.priority,
         'title': self.priority + ' - ' + self.bug_severity
       }))
@@ -364,7 +380,7 @@ var planZilla = {
         })
       }))
       .append($('<div/>', {
-        'class': 'pZ_floatRight',
+        'class': 'pZ_floatRight pZ_attachment',
         'html': $('<span/>', {
           'class': 'pZ_bugNotice',
           'css': {
@@ -384,6 +400,11 @@ var planZilla = {
         'title': self.assigned_to
       }))
       .append($('<div/>', {
+        'class': 'pZ_floatRight pZ_Release',
+        'text': self.release_name,
+        'title': self.release_name
+      }))
+      .append($('<div/>', {
         'class': 'clear'
       }));
     }
@@ -400,7 +421,7 @@ var planZilla = {
       'Thinking just how awesome Dave is while I look for your stupid tickets.',
       'Just think, I could have been a cool video game, but instead Im doing this...  for you.. (sigh...)',
       'Swear at me all you want.  Im a computer and dont have feelings.  You do - and youre ugly',
-      'I think something is wrong with my GPP interface...  looking for tickets...',
+      'I think something is wrong with my com port.  I think Im gunna throw up.',
       'Always its the same thing with you!  Go look for tickets!  just a second...',
       'Ummm...  I was in the bathroom...  Could you wait a second?',
       'Hey look!  While I was looking for tickets, I found a quarter!',
@@ -411,7 +432,8 @@ var planZilla = {
       'God I hate you.  Didnt you just search for that?  Cant you remember it...  jeez...',
       'Why dont you go use Excel?  Its more your level...',
       'Youre wearing that?  Who dresses you?  Seriously, you are an embarassment...',
-      'Please stop refreshing the page just to look at this text.  Searching BZ tickets is hard...'
+      'Please stop refreshing the page just to look at this text.  Searching BZ tickets is hard...',
+      'The Bugzilla server has crashed!  Im going home...  oh wait...  oops...  umm...  nevermind!'
     ];
     return sayings[Math.floor(Math.random()*(sayings.length))];
   }

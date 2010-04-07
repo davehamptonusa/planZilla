@@ -7,15 +7,21 @@
   font-size: 1em;
   overflow: hidden;
   margin-right: 10px;
+  padding-top: .7em;
   white-space:nowrap;
   width: 20em;
 }
+
 .pZ_bugHighlight { /*0,0,1,0*/
   background-color: rgba(254, 236, 101, 0.25);
 }
 
 .pZ_bugNormal { /*0,0,1,0*/
   background-color: rgba(255, 250, 245, 0.75);
+  border-radius-topleft: 5px;
+  -moz-border-radius-topleft: 5px;
+  -webkit-border-top-left-radius: 5px;
+  margin-bottom: 1.1em;
 }
 
 .pZ_bugstatus_CLOSED { /*0,0,1,0*/
@@ -39,6 +45,19 @@
   cursor:  pointer;
 }
 
+.pZ_priority { /*0,0,1,0*/
+  padding-top: .7em;
+}
+
+.pZ_Release { /*0,0,1,0*/
+  font-size: 1em;
+  margin-right: 10px;
+  overflow: hidden;
+  padding-top: .7em;
+  white-space:nowrap;
+  width: 10em;
+}
+
 .pZ_severity_blocker { /* 0,0,1,0 */
   color: #ed1c24;
   font-weight: bold;
@@ -59,14 +78,16 @@
 .pZ_short_desc { /*0,0,1,0*/
   overflow: hidden;
   margin-left: 10px;
+  padding-top: .7em;
   white-space:nowrap;
   width: 30em;
 }
 
 .pZ_target_milestone { /*0,0,1,0*/
   font-size: 1em;
-  overflow: hidden;
   margin-right: 10px;
+  overflow: hidden;
+  padding-top: .7em;
   white-space:nowrap;
   width: 10em;
 }
@@ -91,12 +112,16 @@ div.pZ_bugitem { /*0,0,1,1*/
   border-radius-topleft: 5px;
   -moz-border-radius-topleft: 5px;
   -webkit-border-top-left-radius: 5px;
-  font-size: 13px;
   margin-left: 5px;
-  margin-top: 5px;
   overflow: hidden;
   padding: 0px 0px 0px 0px;
   white-space: nowrap;
+}
+
+div.pZ_bugNum { /*0,0,1,1*/
+  font-size: 1em;
+  margin-right: 10px;
+  padding-top: .7em;
 }
 
 span.pZ_bugNotice { /*0,0,1,1*/
@@ -106,6 +131,7 @@ span.pZ_bugNotice { /*0,0,1,1*/
   display: inline-block;
   text-align: center;
   margin-right: 5px;
+  padding-top: .7em;
 }
 
 span.pZ_bugStatus { /*0,0,1,1*/
@@ -114,13 +140,18 @@ span.pZ_bugStatus { /*0,0,1,1*/
   font-size: .8em;
   display: inline-block;
   text-align: center;
+  padding-top: .7em;
 }
 
-div.pZ_buglist > div.pZ_bugitem { /* 0,0,2,2 */
+div.pZ_bugNum a { /* 0,0,1,2 */
+  color: #4b0607;
+}
+
+div.pZ_buglist > div > div.pZ_bugitem { /* 0,0,2,2 */
   border-bottom: 1px solid #4b0607;
   border-right: 1px solid #4b0607;
-  margin-bottom: 1.1em;
-  padding: .5em;
+  margin-left: 0px;
+  padding-bottom: .2em;
 }
 
 #facebox {

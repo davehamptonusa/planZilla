@@ -1,7 +1,7 @@
 {
   // Required
   "name": "planZilla",
-  "version": "0.1.4",
+  "version": "0.1.6",
 
   // Recommended
   "description": "A jQuery Based overlay to bugzilla that allows for project and release tracking and charting",
