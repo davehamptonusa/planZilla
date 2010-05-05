@@ -24,6 +24,10 @@
   margin-bottom: 1.1em;
 }
 
+.pZ_hideChildren { /*0,0,1,0*/
+  background-color: rgba(244, 116, 22, 0.15);
+}
+
 .pZ_bugstatus_CLOSED { /*0,0,1,0*/
   text-decoration: line-through;
 }
@@ -55,7 +59,7 @@
   overflow: hidden;
   padding-top: .7em;
   white-space:nowrap;
-  width: 10em;
+  width: 12em;
 }
 
 .pZ_severity_blocker { /* 0,0,1,0 */

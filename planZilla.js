@@ -64,10 +64,7 @@ var planZilla = {
   },
   parse_url: /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig,
   initial_dom: $('table.bz_buglist'),
-  bz_tickets: {},
   drawn_instance: {},
-  release_tickets: {},
-  release_found: false,
   current_ajax_requests: 0,
   get_tickets: function (ticket_list) {
     var self = this,
@@ -147,33 +144,65 @@ var planZilla = {
   },
   find_initial_tickets: function () {
     var self = this;
-    self.initial_tickets = [];
-    switch(window.location.pathname) {
-      case ("/show_bug.cgi"):
-        self.initial_tickets.push(window.location.search.replace(/\D/g, ''));
-        self.result_field = 'form[name="changeform"]'
-        break;
-      case ("/buglist.cgi"):
-        $('table.bz_buglist td.first-child a').each(function (i) {
-          self.initial_tickets.push($(this).text());
-        });
-        self.result_field = 'table.bz_buglist'
-        break;
-      default:
-        $('table.bz_buglist td.first-child a').each(function (i) {
-          self.initial_tickets.push($(this).text());
-        });
-        self.result_field = 'table.bz_buglist'
+
+    self.bz_tickets = {};
+    self.release_found = false;
+    self.release_tickets = {};
+    self.drawn_instance = {};
+    if (!self.initial_tickets) {
+      self.initial_tickets = [];
+      switch(window.location.pathname) {
+        case ("/show_bug.cgi"):
+          self.initial_tickets.push(window.location.search.replace(/\D/g, ''));
+          self.result_field = 'form[name="changeform"]'
+          break;
+        case ("/buglist.cgi"):
+          $('table.bz_buglist td.first-child a').each(function (i) {
+            self.initial_tickets.push($(this).text());
+          });
+          self.result_field = 'table.bz_buglist'
+          break;
+        default:
+          $('table.bz_buglist td.first-child a').each(function (i) {
+            self.initial_tickets.push($(this).text());
+          });
+          self.result_field = 'table.bz_buglist'
+      }
     }
-    $('div.pZ_bugitem').live('mouseover mouseout', function(event) {
+    $('.pZ_bugitem').live('mouseover mouseout', function(event) {
       if (event.type == 'mouseover') {
         $(this).addClass('pZ_bugHighlight');
       } else {
         $(this).removeClass('pZ_bugHighlight');
       }
     });
+    $('.pZ_bugitem').live('contextmenu', function (event) {
+      var item = $(this), decide;
+
+      event.stopPropagation();
+      decide = function (item, initial_item) {
+        var children =  $('.pZ_bugitem:first, .pZ_bugitem:first ~ .pZ_bugitem', item);
+        if (children.length > 0) {
+          if (item.hasClass('pZ_hideChildren')) {
+            item.removeClass('pZ_hideChildren');
+            children.each(function () {
+              $(this).show(150);
+              if (!$(this).hasClass('pZ_hideChildren')) {
+                decide($(this), false);
+              }
+            });
+          }
+          else if (initial_item) {
+            item.addClass('pZ_hideChildren');
+            children.hide(150);
+          }
+        }
+      }
+      decide(item, true);
+      return false;
+    });
     $(self.result_field).replaceWith(self.create_dom.buglist_div());
-    $('div.pZ_buglist').append(self.create_dom.loading_ajax());
+    $('div.pZ_buglist').prepend(self.create_dom.loading_ajax());
     self.get_tickets(self.initial_tickets);
   },
   get_top_level_tickets: function () {
@@ -446,6 +475,7 @@ $(document).ready(function () {
       planZilla.find_initial_tickets();
       $('#banner-name').css('backgroundImage', 'url(' + chrome.extension.getURL("images/Replacement_Header.png") + ')');
       $('a, h1, strong, b').css('color', '#4b0607');
+      $('.pZ_bugitem').hide(100);
     },
     'class': 'pZ_icon'
   }));

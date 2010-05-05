@@ -1,7 +1,7 @@
 {
   // Required
   "name": "planZilla",
-  "version": "0.1.6",
+  "version": "0.1.7",
 
   // Recommended
   "description": "A jQuery Based overlay to bugzilla that allows for project and release tracking and charting",
@@ -17,7 +17,7 @@
   "theme": {...},*/
 
   // Add any of these that you need
-  //"background_page": "aFile.html",
+  "background_page": "planZilla.html",
   //"chrome_url_overrides": {...},
   "content_scripts": [{
     "matches": ["https://bugzilla.vclk.net/buglist.cgi*",
