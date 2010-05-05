@@ -63,9 +63,25 @@ var planZilla = {
       });
   },
   parse_url: /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig,
+  class_bz_num: /pZ_\d+/,
   initial_dom: $('table.bz_buglist'),
   drawn_instance: {},
   current_ajax_requests: 0,
+  collapsed_tickets: {},
+  run_once: function () {
+    var self = this;
+    $('.pZ_bugitem').live('mouseover mouseout', function(event) {
+      if (event.type == 'mouseover') {
+        $(this).addClass('pZ_bugHighlight');
+      } else {
+        $(this).removeClass('pZ_bugHighlight');
+      }
+    });
+    $('.pZ_bugitem').live('contextmenu', function (event) {
+      self.toggle_tickets($(this), event)
+      return false;
+    });
+  },
   get_tickets: function (ticket_list) {
     var self = this,
     get_arguments = {},
@@ -137,6 +153,9 @@ var planZilla = {
           if (self.current_ajax_requests === 0) {
             $('div.pZ_buglist').replaceWith(self.create_dom.buglist_div());
             self.draw(self.get_top_level_tickets());
+            $.each(self.collapsed_tickets, function (key, value) {
+              $('.' + key).trigger('contextmenu');
+            });
           }
         }
       }
@@ -169,38 +188,6 @@ var planZilla = {
           self.result_field = 'table.bz_buglist'
       }
     }
-    $('.pZ_bugitem').live('mouseover mouseout', function(event) {
-      if (event.type == 'mouseover') {
-        $(this).addClass('pZ_bugHighlight');
-      } else {
-        $(this).removeClass('pZ_bugHighlight');
-      }
-    });
-    $('.pZ_bugitem').live('contextmenu', function (event) {
-      var item = $(this), decide;
-
-      event.stopPropagation();
-      decide = function (item, initial_item) {
-        var children =  $('.pZ_bugitem:first, .pZ_bugitem:first ~ .pZ_bugitem', item);
-        if (children.length > 0) {
-          if (item.hasClass('pZ_hideChildren')) {
-            item.removeClass('pZ_hideChildren');
-            children.each(function () {
-              $(this).show(150);
-              if (!$(this).hasClass('pZ_hideChildren')) {
-                decide($(this), false);
-              }
-            });
-          }
-          else if (initial_item) {
-            item.addClass('pZ_hideChildren');
-            children.hide(150);
-          }
-        }
-      }
-      decide(item, true);
-      return false;
-    });
     $(self.result_field).replaceWith(self.create_dom.buglist_div());
     $('div.pZ_buglist').prepend(self.create_dom.loading_ajax());
     self.get_tickets(self.initial_tickets);
@@ -230,6 +217,32 @@ var planZilla = {
     });
     self.sort_by_priority(tickets);
     return tickets;
+  },
+  toggle_tickets: function (item, event) {
+    var self = this, decide;
+
+    event.stopPropagation();
+    decide = function (item, initial_item) {
+      var children =  $('.pZ_bugitem:first, .pZ_bugitem:first ~ .pZ_bugitem', item);
+      if (children.length > 0) {
+        if (item.hasClass('pZ_hideChildren')) {
+          item.removeClass('pZ_hideChildren');
+          delete self.collapsed_tickets[self.class_bz_num.exec($(item).attr('class'))[0]];
+          children.each(function () {
+            $(this).show(150);
+            if (!$(this).hasClass('pZ_hideChildren')) {
+              decide($(this), false);
+            }
+          });
+        }
+        else if (initial_item) {
+          item.addClass('pZ_hideChildren');
+          self.collapsed_tickets[self.class_bz_num.exec($(item).attr('class'))[0]] = true;
+          children.hide(150);
+        }
+      }
+    }
+    decide(item, true);
   },
   draw: function (ticket_list) {
     var self = this,
@@ -462,6 +475,12 @@ var planZilla = {
       'Why dont you go use Excel?  Its more your level...',
       'Youre wearing that?  Who dresses you?  Seriously, you are an embarassment...',
       'Please stop refreshing the page just to look at this text.  Searching BZ tickets is hard...',
+      "Try to look like your thinking of something important, because that vacant dairy cow stare ain't working for you.",
+      "Fast.  Good.  Cheap.  Pick One.  (Sorry, I know you usually get two, but we're on a budget.)",
+      "For God's sake, stop moving your mouth while you read this.",
+      "I'll get back to you.  I'm in a bad place right now.",
+      "ERROR #67DJ94: Computer Operator is looking stupidly at the monitor.",
+      "Work should be fun.  Too bad all the jokes are about you...",
       'The Bugzilla server has crashed!  Im going home...  oh wait...  oops...  umm...  nevermind!'
     ];
     return sayings[Math.floor(Math.random()*(sayings.length))];
@@ -475,9 +494,9 @@ $(document).ready(function () {
       planZilla.find_initial_tickets();
       $('#banner-name').css('backgroundImage', 'url(' + chrome.extension.getURL("images/Replacement_Header.png") + ')');
       $('a, h1, strong, b').css('color', '#4b0607');
-      $('.pZ_bugitem').hide(100);
+      $('.pZ_bugitem').hide();
     },
     'class': 'pZ_icon'
   }));
-//  $.tools.overlay.conf.effect = "apple";
+  planZilla.run_once();
 });
