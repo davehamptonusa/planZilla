@@ -318,7 +318,7 @@ var planZilla = {
             'float': 'left'
           },
           'html': $('<h3/>', {
-            'text': '#' + key + ' - ' + value.who,
+            'text': '#' + key + ' - ' + value.who
           })
         }))
         .append($('<div/>', {
@@ -326,7 +326,7 @@ var planZilla = {
             'float': 'right'
           },
           'html': $('<h5/>', {
-            'text': value.bug_when,
+            'text': value.bug_when
           })
         }))
         .append($('<div/>', {
@@ -411,7 +411,7 @@ var planZilla = {
       }()) : 0;
       return $('<div/>', {
 
-        'class': 'pZ_bugitem  pZ_severity_' + self.bug_severity + ' pZ_bugstatus_' + self.bug_status + ' pZ_' + self.bug_id,
+        'class': 'pZ_bugitem  pZ_severity_' + self.bug_severity + ' pZ_bugstatus_' + self.bug_status + ' pZ_' + self.bug_id
       })
       .append($('<div/>', {
         'class': 'pZ_bugNum pZ_floatLeft',
