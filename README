@@ -1,0 +1,23 @@
+This is an Add on for bugzilla used primarily by Search123, so it is coded for our use.
+
+For the best benefit, do things our way.  We drink our own kool-aid, so we think our way is best anyways...
+
+To use:
+
+Drag and drop the .crx file into Google Chrome and install as a plug in.
+
+Click on the planZilla Icon to activate
+
+Use Target Milestone = 'PRD Complete' as the flag for a release tickets.  Dependency sniffinf doesn't go past the first found release ticket.
+right click on a ticket with dependencies to close
+click on comments or attachment Icons to view in the main screen
+It's all "ajaxy" so everything is already on the page and it loads fast.
+
+It's best to open tickets in a new tab and keep your planZilla window open.  That way you can refresh it by clicking the icon again and it will remember what you had collapsed before.
+
+Suggestions?  I probably don't care, but you can email dhampton@valueclick.com and let me know.
+Want to share with someone else?  Just send them the .crx or point them to the public folder where I keep it.  I maintain a distribution list, so forward me your name or their name of they want to be on the list to get notification of updates.
+
+Disclaimers:
+I wrote it for my own use.  It has bugs.  Deal with it.  Write your own if you want it better or faster.
+No it doesn't run in ie or firefox.

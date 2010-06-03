@@ -1,0 +1,7 @@
+starting from Version 0.1.8
+
+0.1.8:
+ADDED initial ability to see and click through attachements.  Still Needs
+refinement
+FIXED: Display of comments to monospace and preserving spaces so it displays
+cut 'n paste tables better

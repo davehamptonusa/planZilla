@@ -335,8 +335,10 @@ var planZilla = {
             'padding': '0em 1em 1em 1em'
           },
           'html': $('<p/>', {
+            'class': 'pZ_ticketComment',
             'html': function () {
               var display_text = value.thetext.replace(/\n/g,'<br>');
+              display_text = display_text.replace(/\s/g, '&nbsp;');
               display_text = display_text.replace(planZilla.parse_url, "<a href='$1'>$1</a>");
               return display_text;
             }
@@ -345,6 +347,51 @@ var planZilla = {
         .append('<hr/>');
         $('#facebox_content', pZ_box).append(dom);
       });
+      return pZ_box;
+    },
+    attachments: function () {
+      var self = this, i, display_table, row, attachment
+      attachment_length = this.attachment.length;
+
+      pZ_box = $(planZilla.create_dom.planZilla_box());
+      display_table = $('<table/>', {
+        'class': 'pZ_attachmentTable',
+        'html': $('<thead><tr><th>Attachment</th><th>Type</th><th>Creator</th><th>Date</th><th>Size</th><tr>,</thead>')
+      });
+      display_table.append('<tbody/>');
+      for (i = 0; i < attachment_length; i ++) {
+        attachment = self.attachment[i];
+        row = $('<tr/>', {
+          css: {
+            'textDecoration': (attachment.isobsolete === 1) ? 'line-through' : 'none'
+          },
+          'class': 'pZ_attachmentTable'
+        })
+        .append($('<td/>', {
+          'html': $('<a/>', {
+            'css': {
+              'color':'#4b0607'
+            },
+            'href': '/attachment.cgi?id=' + attachment.attachid,
+            'target': 'blank',
+            'text': attachment.desc
+          })
+        }))
+        .append($('<td/>', {
+          'html': attachment.type
+        }))
+        .append($('<td/>', {
+          'html': 'not yet available'
+        }))
+        .append($('<td/>', {
+          'html': attachment.date
+        }))
+        .append($('<td/>', {
+          'html': 'not yet available'
+        }))
+        $('tbody', display_table).append(row);
+      }
+      $('#facebox_content', pZ_box).append(display_table);
       return pZ_box;
     },
     buglist_item: function () {
@@ -422,7 +469,26 @@ var planZilla = {
         })
       }))
       .append($('<div/>', {
-        'class': 'pZ_floatRight pZ_attachment',
+        'class': (attachment_length > 0) ? 'pZ_floatRight pZ_attachment' : 'pZ_floatRight',
+        'click': function () {
+          if (attachment_length > 0) {
+            $(planZilla.create_dom.attachments.using(self))
+            .appendTo('body')
+            .overlay({ 
+              expose: {
+                color: '#fff',
+                loadSpeed: 200,
+                opacity: 0.5
+              },
+              api: true,
+              speed: 'slow',
+              onClose: function () {
+                $('#facebox').next().remove();
+                $('#facebox').remove();
+              }
+            }).load();
+          }
+        },
         'html': $('<span/>', {
           'class': 'pZ_bugNotice',
           'css': {

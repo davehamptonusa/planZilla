@@ -36,6 +36,18 @@
   cursor: pointer;
 }
 
+.pZ_attachment { /*0,0,1,0*/
+  cursor: pointer;
+}
+.pZ_attachmentTable {/*0,0,1,0*/
+  border-spacing: 2px 2px;
+  border-color: gray;
+  border-style: solid;
+  border-width: 1px;
+  border-collapse: collapse;
+  width: 100%;
+}
+
 .pZ_floatLeft { /*0,0,1,0*/
   float: left;
   padding: 0px 0px 0px 5px;
@@ -94,6 +106,10 @@
   padding-top: .7em;
   white-space:nowrap;
   width: 10em;
+}
+
+.pZ_ticketComment { /*0,0,1,0*/
+  font-family: Courier, monospace, mono-space;
 }
 
 .pZ_severity_minor { /* 0,0,1,0 */
