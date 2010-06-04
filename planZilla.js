@@ -336,12 +336,7 @@ var planZilla = {
           },
           'html': $('<p/>', {
             'class': 'pZ_ticketComment',
-            'html': function () {
-              var display_text = value.thetext.replace(/\n/g,'<br>');
-              display_text = display_text.replace(/\s/g, '&nbsp;');
-              display_text = display_text.replace(planZilla.parse_url, "<a href='$1'>$1</a>");
-              return display_text;
-            }
+            'html': value.thetext.replace(planZilla.parse_url, "<a href='$1'>$1</a>")
           })
         }))
         .append('<hr/>');

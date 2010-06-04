@@ -1,5 +1,9 @@
 starting from Version 0.1.8
 
+0.1.9:
+FIXED the Display of comments in switching the to monospace so that it would
+wrap properly.
+
 0.1.8:
 ADDED initial ability to see and click through attachements.  Still Needs
 refinement

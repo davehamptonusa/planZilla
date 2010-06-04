@@ -110,6 +110,7 @@
 
 .pZ_ticketComment { /*0,0,1,0*/
   font-family: Courier, monospace, mono-space;
+  white-space: pre-wrap;
 }
 
 .pZ_severity_minor { /* 0,0,1,0 */
