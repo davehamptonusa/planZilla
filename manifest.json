@@ -1,7 +1,7 @@
 {
   // Required
   "name": "planZilla",
-  "version": "0.1.9",
+  "version": "0.2.1",
 
   // Recommended
   "description": "A jQuery Based overlay to bugzilla that allows for project and release tracking and charting",
@@ -20,8 +20,7 @@
   "background_page": "planZilla.html",
   //"chrome_url_overrides": {...},
   "content_scripts": [{
-    "matches": ["https://bugzilla.vclk.net/buglist.cgi*",
-                "https://bugzilla.vclk.net/show_bug.cgi*"],
+    "matches": ["https://bugzilla.vclk.net/*"],
     "css": ["css/planZilla.css"],
     "js":  ["jQuery.js", "jquery.xml2json.js", "jquery.tools.min.js", "planZilla.js"],
     "run_at": "document_start"

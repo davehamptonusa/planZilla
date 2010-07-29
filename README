@@ -8,7 +8,7 @@ Drag and drop the .crx file into Google Chrome and install as a plug in.
 
 Click on the planZilla Icon to activate
 
-Use Target Milestone = 'PRD Complete' as the flag for a release tickets.  Dependency sniffinf doesn't go past the first found release ticket.
+Use Issue Type = 'RELEASE' as the flag for a release tickets.  Dependency sniffinf doesn't go past the first found release ticket.
 right click on a ticket with dependencies to close
 click on comments or attachment Icons to view in the main screen
 It's all "ajaxy" so everything is already on the page and it loads fast.

@@ -137,6 +137,7 @@ div.pZ_bugitem { /*0,0,1,1*/
   overflow: hidden;
   padding: 0px 0px 0px 0px;
   white-space: nowrap;
+  font-size: 12px;
 }
 
 div.pZ_bugNum { /*0,0,1,1*/

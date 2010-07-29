@@ -1,4 +1,23 @@
 starting from Version 0.1.8
+0.2.1:
+This has been reworked to work with the new bugzilla release.  First, it
+always changes the way the page looks, because I didn't like the default.
+
+Second, To planZilla-ize a page, click the valueclick logo at the top, as
+opposed to the icon that used to be on the side.  You can still reclick to
+update and keep your project collapse settings.
+
+To make this work better for you, All Tickets should be assigned to a project
+and a release.  Master Project tickets should only be assigned to a release.
+Some mouse over info has changed.
+
+The system does not scan past the first release it finds, but the issue type
+must be set to "RELEASE" for it to find them.  The old way of using PRD
+Complete in the Target Milestone is now defunct.
+
+During the Bugzilla transfer, duplicate release tickets may have been created
+that will mess up your system.  You need to make sure that Release tickets
+aren't assigned to other release tickets or you're screwed.
 
 0.1.9:
 FIXED the Display of comments in switching the to monospace so that it would

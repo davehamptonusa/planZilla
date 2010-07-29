@@ -63,6 +63,14 @@ var planZilla = {
       });
   },
   parse_url: /(\b(https?|ftp|file):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/ig,
+  priority_lookup: {
+    'Highest': 'P1',
+    'High': 'P2',
+    'Normal':'P3',
+    'Low': 'P4',
+    'Lowest': 'P5',
+    '--': 'P5'
+  },
   class_bz_num: /pZ_\d+/,
   initial_dom: $('table.bz_buglist'),
   drawn_instance: {},
@@ -117,10 +125,10 @@ var planZilla = {
           json.bug = self.convert_to_array(json.bug);
           $.each(json.bug, function (i, value) {
             var bug_id;
-            if (value.target_milestone === 'PRD Complete') {
+            if (value.cf_issue_type === 'RELEASE') {
               self.release_tickets[value.bug_id] = value.short_desc.replace('Search123_', '');
             }
-            if (value.target_milestone !== 'PRD Complete' || (value.target_milestone === 'PRD Complete' && self.release_found === false)) {
+            if (value.cf_issue_type !== 'RELEASE' || (value.cf_issue_type === 'RELEASE' && self.release_found === false)) {
               if (value.long_desc) {
                 value.long_desc = self.convert_to_array(value.long_desc);
               }
@@ -132,8 +140,9 @@ var planZilla = {
               self.bz_tickets[bug_id].dependson = json_deep.bug[i].dependson ? json_deep.bug[i].dependson : [];
               self.bz_tickets[bug_id].blocked = json_deep.bug[i].blocked ? json_deep.bug[i].blocked: [];
               self.bz_tickets[bug_id].timestamp = timestamp;
+              self.bz_tickets[bug_id].priority = self.priority_lookup[value.priority];
               //stop propogation to other release tickets
-              if (value.target_milestone === 'PRD Complete') {
+              if (value.cf_issue_type === 'RELEASE') {
                 self.release_found = true;
               }
               //clean out the unnessecary layers
@@ -182,10 +191,8 @@ var planZilla = {
           self.result_field = 'table.bz_buglist'
           break;
         default:
-          $('table.bz_buglist td.first-child a').each(function (i) {
-            self.initial_tickets.push($(this).text());
-          });
-          self.result_field = 'table.bz_buglist'
+          alert('You can only planZilla-ize a buglist or a show_bug page.');
+          return;
       }
     }
     $(self.result_field).replaceWith(self.create_dom.buglist_div());
@@ -197,7 +204,7 @@ var planZilla = {
     tickets = [];
     //temporary for not displaying release tickets...
     $.each(self.bz_tickets, function (key, ticket) {
-        if (ticket.target_milestone === 'PRD Complete') {
+        if (ticket.cf_issue_type === 'RELEASE') {
           delete self.bz_tickets[key];
         }
     });
@@ -412,7 +419,8 @@ var planZilla = {
         'class': 'pZ_bugNum pZ_floatLeft',
         'html': $('<a/>', {
           'href': 'https://bugzilla.vclk.net/show_bug.cgi?id=' + self.bug_id,
-          'text': self.bug_id
+          'text': self.bug_id,
+          'title': self.cf_issue_type
         })
       }))
       .append($('<div/>', {
@@ -499,8 +507,8 @@ var planZilla = {
       }))
       .append($('<div/>', {
         'class': 'pZ_floatRight pZ_assigned_to',
-        'text': self.assigned_to,
-        'title': self.assigned_to
+        'text': self.assigned_to.name,
+        'title': self.assigned_to.text
       }))
       .append($('<div/>', {
         'class': 'pZ_floatRight pZ_Release',
@@ -549,15 +557,65 @@ var planZilla = {
 };
 
 $(document).ready(function () {
-  $('#LeftSideBar').prepend($('<img/>', {
-    'src': chrome.extension.getURL("images/transparent_icon.png"),
-    'click': function () {
+  $('body').css('backgroundColor', '#FFFDEE');
+  $('#body-wrapper').css('backgroundColor', '#FFFFE7');
+  $('body').css('backgroundImage', 'url(' + chrome.extension.getURL("images/bugzilla_bg.png")+')');
+  $('div.searcher').css('backgroundImage', 'url(' + chrome.extension.getURL("images/searcher_bg.png")+')');
+  $('#footer').css({
+    'backgroundImage': 'url(' + chrome.extension.getURL("images/footer.png")+')',
+    'paddingTop':'0px'
+  });
+  $('#titles').css('backgroundImage', 'url(' + chrome.extension.getURL("images/transparent_icon.png")+')');
+  $('.links a span').css('textShadow', '#333 1px 1px 1px');
+  $('.tabs').css({
+    'marginLeft': 'auto',
+    'marginRight': 'auto',
+    'borderBottom': '1px solid #449026',
+    'borderTop': '1px solid #DAE7AA',
+    'background': '-webkit-gradient(linear, left bottom,left top,color-stop(0.37, rgb(126,179,66)),color-stop(0.83, rgb(183,209,113)))'
+  });
+  $('#header .tabs').css({
+    '-webkit-box-shadow': '#666 0px 0px 4px',
+    '-webkit-border-top-right-radius': '5px',
+    '-webkit-border-top-left-radius': '5px',
+    'marginTop': '19px'
+  });
+  $('#footer .tabs').css({
+    '-webkit-box-shadow': '#666 2px 2px 2px',
+    '-webkit-border-bottom-right-radius': '5px',
+    '-webkit-border-bottom-left-radius': '5px',
+    'marginTop': '0px'
+  });
+  $('#footer .separator').remove();
+  $('#header .links').css('padding', '0px');
+  $('.tabs .links li').css({
+    'listStyle': 'none',
+    'display': 'inline-block',
+    'padding': '0.5em 0.5em',
+    'borderLeft': '1px solid #92BD51'
+  })
+  .hover(function() {
+      $(this).css('backgroundColor','rgba(255,255,255,0.2)');
+    },
+    function() {
+      $(this).css('backgroundColor','rgba(255,255,255,0)');
+    }
+  );
+  $('.tabs .links li a, .tabs .links li a span ').css({
+    'background': 'none',
+    'padding': '0px',
+    'color': 'white',
+    'fontWeight': 'normal'
+  });
+  $('#banner').css({
+      'backgroundImage': 'url(' + chrome.extension.getURL("images/vclk_bugzilla_logo.png")+')'
+    })
+    .attr('title', 'planZilla-ize Me!')
+    .click( function () {
       planZilla.find_initial_tickets();
       $('#banner-name').css('backgroundImage', 'url(' + chrome.extension.getURL("images/Replacement_Header.png") + ')');
-      $('a, h1, strong, b').css('color', '#4b0607');
       $('.pZ_bugitem').hide();
-    },
-    'class': 'pZ_icon'
-  }));
+    })
+    .addClass('pZ_icon');
   planZilla.run_once();
 });
