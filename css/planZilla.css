@@ -176,6 +176,15 @@ div.pZ_buglist > div > div.pZ_bugitem { /* 0,0,2,2 */
   padding-bottom: .2em;
 }
 
+span.pZ_issueType { /*0,0,1,1*/
+  width: 23px;
+  min-height: 22px;
+  font-size: .8em;
+  display: inline-block;
+  text-align: center;
+  padding-top: .7em;
+}
+
 #facebox {
   /* overlay is hidden before loading 
   display:none;*/

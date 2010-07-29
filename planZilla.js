@@ -416,11 +416,20 @@ var planZilla = {
         'class': 'pZ_bugitem  pZ_severity_' + self.bug_severity + ' pZ_bugstatus_' + self.bug_status + ' pZ_' + self.bug_id
       })
       .append($('<div/>', {
+        'class': 'pZ_floatLeft',
+        'html': $('<span/>', {
+          'class': 'pZ_issueType',
+          'title': self.cf_issue_type,
+          'css': {
+            'background': 'url(' + chrome.extension.getURL("images/bug_status/" + self.cf_issue_type.replace(/\s/g,"_") + ".png") + ') center no-repeat'
+          }
+        })
+      }))
+      .append($('<div/>', {
         'class': 'pZ_bugNum pZ_floatLeft',
         'html': $('<a/>', {
           'href': 'https://bugzilla.vclk.net/show_bug.cgi?id=' + self.bug_id,
-          'text': self.bug_id,
-          'title': self.cf_issue_type
+          'text': self.bug_id
         })
       }))
       .append($('<div/>', {
@@ -508,7 +517,9 @@ var planZilla = {
       .append($('<div/>', {
         'class': 'pZ_floatRight pZ_assigned_to',
         'text': self.assigned_to.name,
-        'title': self.assigned_to.text
+        'title': 'Assigned: ' + self.assigned_to.name + '\n' +
+                 'Reporter:' + self.reporter.name + '\n' +
+                 'QA Contact:' + self.qa_contact.name
       }))
       .append($('<div/>', {
         'class': 'pZ_floatRight pZ_Release',
@@ -601,12 +612,25 @@ $(document).ready(function () {
       $(this).css('backgroundColor','rgba(255,255,255,0)');
     }
   );
+  $('.tabs .links li:first').css({
+    'borderLeft': '0px'
+  })
   $('.tabs .links li a, .tabs .links li a span ').css({
     'background': 'none',
     'padding': '0px',
     'color': 'white',
     'fontWeight': 'normal'
   });
+  $('.searcher input.txt').css({
+    'border': '1px solid #DAE7AA',
+    'background': '-webkit-gradient(linear, left bottom,left top,color-stop(0.37, rgb(255,250,245)),color-stop(0.83, rgb(225,220, 215)))',
+    'height': '15px'
+    });
+  $('.searcher input.btn').css({
+      'backgroundImage': 'url(' + chrome.extension.getURL("images/quick_search_btn.gif")+')',
+      'marginLeft': '-4px',
+      'marginTop': '13px'
+    });
   $('#banner').css({
       'backgroundImage': 'url(' + chrome.extension.getURL("images/vclk_bugzilla_logo.png")+')'
     })

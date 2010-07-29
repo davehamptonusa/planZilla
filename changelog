@@ -1,4 +1,9 @@
 starting from Version 0.1.8
+0.2.2:
+Added mouseover the assigned name to see reporter and QA
+Added Icons to clarify Issue Type
+Cleaned up Search button images and look at top of page
+
 0.2.1:
 This has been reworked to work with the new bugzilla release.  First, it
 always changes the way the page looks, because I didn't like the default.
