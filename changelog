@@ -1,4 +1,8 @@
 starting from Version 0.1.8
+0.2.3
+Added auto sort by priority and then severirty
+added population of image by putting an image url in the url field
+
 0.2.2:
 Added mouseover the assigned name to see reporter and QA
 Added Icons to clarify Issue Type

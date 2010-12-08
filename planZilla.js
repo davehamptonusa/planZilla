@@ -54,11 +54,22 @@ var planZilla = {
     return (! this.is_array(item)) ? [item] : item;
   },
   'sort_by_priority': function (tickets) {
-     var self = this;
+     var self = this,
+     severity = {
+       'blocker' : 0,
+       'critical': 1,
+       'major'   : 2,
+       'normal'  : 3,
+       'minor'   : 4,
+       'trivial' : 5
+     },
+     bz_tickets = self.bz_tickets;
 
      tickets.sort(function (a,b) {
-        a = (self.bz_tickets[a].priority).replace('P','');
-        b = (self.bz_tickets[b].priority).replace('P','');
+        console.log(((bz_tickets[a].priority).substring(1)) * 10);
+        a = (((bz_tickets[a].priority).substring(1)) * 10 + severity[bz_tickets[a].bug_severity]);
+        b = (((bz_tickets[b].priority).substring(1)) * 10 + severity[bz_tickets[b].bug_severity]);
+        console.log(a + ' - ' + b);
         return (a - b);
       });
   },
@@ -564,6 +575,16 @@ var planZilla = {
       'The Bugzilla server has crashed!  Im going home...  oh wait...  oops...  umm...  nevermind!'
     ];
     return sayings[Math.floor(Math.random()*(sayings.length))];
+  },
+  'addReleaseImage': function () {
+    if ($('#bug_file_loc').val()) {
+      $('#bz_big_form_parts').before($('<img/>', {
+        src: $('#bug_file_loc').val(),
+        css: {
+          float: 'right'
+        }
+      }));
+    }
   }
 };
 
@@ -641,5 +662,6 @@ $(document).ready(function () {
       $('.pZ_bugitem').hide();
     })
     .addClass('pZ_icon');
+  planZilla.addReleaseImage();
   planZilla.run_once();
 });
