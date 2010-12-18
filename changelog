@@ -1,4 +1,15 @@
 starting from Version 0.1.8
+0.3.0
+Added ability to handle sprints as well as releases and display both.  You can
+search by either a release or a sprint.  It remembers past browser sessioons
+your status of what your last search was.
+right now you force refresh the release and sprint list - later it will auto
+handle this as well (keeping a count)
+
+This is now fairly broken for people outside of search until they have their
+bugzilla updated and I add the ability to alter the field designating the
+sharerid.
+
 0.2.3
 Added auto sort by priority and then severirty
 added population of image by putting an image url in the url field
