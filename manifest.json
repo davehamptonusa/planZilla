@@ -22,7 +22,15 @@
   "content_scripts": [{
     "matches": ["https://bugzilla.vclk.net/*"],
     "css": ["css/planZilla.css"],
-    "js":  ["jQuery.js", "jquery.xml2json.js", "jquery.tools.min.js", "planZilla.js"],
+    "js":  [
+      "jQuery.js", 
+      "jquery.xml2json.js", 
+      "jquery.tools.min.js", 
+      "jquery.flot.min.js",
+      "jquery.flot.stack.min.js",
+      "underscore-min.js",
+      "planZilla.js",
+      "planZilla.flot.js"],
     "run_at": "document_start"
   }],
   //"minimum_chrome_version": "versionString",

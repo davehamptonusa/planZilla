@@ -44,6 +44,7 @@ array.remove(-2,-1);
 
 var planZilla = {
   issueTypes: ['RELEASES', 'SPRINTS'],
+  users: {},
   is_array: function (value) {
     return value &&
         typeof value === 'object' &&
@@ -214,6 +215,8 @@ var planZilla = {
               self.bz_tickets[bug_id].blocked = json_deep.bug[i].blocked ? json_deep.bug[i].blocked: [];
               self.bz_tickets[bug_id].timestamp = timestamp;
               self.bz_tickets[bug_id].priority = self.priority_lookup[value.priority];
+              //create object of user_names
+              self.users[value.assigned_to.name] = 1;
               //clean out the unnessecary layers
               $.each(array_mods, function (i, key) {
                 $.each(self.bz_tickets[bug_id][key], function (i, d_value) {
@@ -260,10 +263,23 @@ var planZilla = {
         return;
     }
     $('#body-wrapper').prepend(self.create_dom.loading_ajax());
+    self.get_tickets([issueID]);
     $('#title').html($('<p/>', {
       text: 'planZilla - View Type: ' + issueType.slice(0, -1) + ' Iteration: ' + self[issueType][issueID]
     }));
-    self.get_tickets([issueID]);
+    $('#subtitle, #information').empty();
+    if (issueType === "SPRINTS") {
+      $('#title').append($('<a/>', {
+        text: 'Avaliable Hours:',
+        css: {
+          'float': 'right'
+        },
+        click: function (e) {
+          e.preventDefault();
+          planZilla.flot.sprintGraph();
+        }
+      }));
+    }
   },
   get_top_level_tickets: function () {
     var self = this,
@@ -382,7 +398,24 @@ var planZilla = {
       .append(planZilla.stupid_search_phrase());
     },
     planZilla_box: function() {
-      return $('<div id="facebox"><div><h2><img src="' +  chrome.extension.getURL("images/text_icon.png") + '"><button class="close"> Close </button></h2><div id="facebox_content"></div></div></div>');
+      //Creates the  standard box
+      return $('<div id="facebox"><div><h2><img src="' +  chrome.extension.getURL("images/text_icon.png") + '"><button class="close"> Close </button></h2><div id="facebox_content"></div></div></div>')
+          .appendTo('body')
+          .overlay({ 
+            expose: {
+              color: '#000',
+              loadSpeed: 200,
+              opacity: 0.5
+            },
+            api: true,
+            onLoad: function() {
+              $('#facebox').css('left', '10%');
+            },
+            onClose: function () {
+              $('#facebox').next().remove();
+              $('#facebox').remove();
+            }
+          }).load();
     },
     iterationSelector: function () {
       var 
@@ -472,8 +505,8 @@ var planZilla = {
 
         return domSelect;
       });
-      $('#facebox_content', pZ_box).append(dom);
-      return pZ_box;
+      $('#facebox_content').append(dom);
+      //return pZ_box;
     },
     ticket_comments: function () {
       var self = this,
@@ -510,9 +543,8 @@ var planZilla = {
           })
         }))
         .append('<hr/>');
-        $('#facebox_content', pZ_box).append(dom);
+        $('#facebox_content').append(dom);
       });
-      return pZ_box;
     },
     attachments: function () {
       var self = this, i, display_table, row, attachment
@@ -556,8 +588,7 @@ var planZilla = {
         }))
         $('tbody', display_table).append(row);
       }
-      $('#facebox_content', pZ_box).append(display_table);
-      return pZ_box;
+      $('#facebox_content').append(display_table);
     },
     buglist_item: function () {
       var self = this,
@@ -619,23 +650,7 @@ var planZilla = {
       .append($('<div/>', {
         'class': 'pZ_floatRight pZ_comments',
         'click': function () {
-          $(planZilla.create_dom.ticket_comments.using(self))
-          .appendTo('body')
-          .overlay({ 
-            expose: {
-              color: '#000',
-              loadSpeed: 200,
-              opacity: 0.5
-            },
-            api: true,
-            onLoad: function() {
-              $('#facebox').css('left', '10%');
-            },
-            onClose: function () {
-              $('#facebox').next().remove();
-              $('#facebox').remove();
-            }
-          }).load();
+          planZilla.create_dom.ticket_comments.using(self);
         },
         'html': $('<span/>', {
           'class': 'pZ_bugNotice',
@@ -649,23 +664,7 @@ var planZilla = {
         'class': (attachment_length > 0) ? 'pZ_floatRight pZ_attachment' : 'pZ_floatRight',
         'click': function () {
           if (attachment_length > 0) {
-            $(planZilla.create_dom.attachments.using(self))
-            .appendTo('body')
-            .overlay({ 
-              expose: {
-                color: '#000',
-                loadSpeed: 200,
-                opacity: 0.5
-              },
-              api: true,
-              onLoad: function() {
-                $('#facebox').css('left', '10%');
-              },
-              onClose: function () {
-                $('#facebox').next().remove();
-                $('#facebox').remove();
-              }
-            }).load();
+            planZilla.create_dom.attachments.using(self)
           }
         },
         'html': $('<span/>', {
@@ -823,25 +822,8 @@ $(document).ready(function () {
     })
     .attr('title', 'planZilla-ize Me!')
     .click( function () {
-      $(planZilla.create_dom.iterationSelector())
-          .appendTo('body')
-          .overlay({ 
-            expose: {
-              color: '#000',
-              loadSpeed: 200,
-              opacity: 0.5
-            },
-            api: true,
-            onLoad: function() {
-              $('#facebox').css('left', '10%');
-            },
-            onClose: function () {
-              $('#facebox').next().remove();
-              $('#facebox').remove();
-            }
-          }).load();
+      planZilla.create_dom.iterationSelector();
       $('#banner-name').css('backgroundImage', 'url(' + chrome.extension.getURL("images/Replacement_Header.png") + ')');
-      //$('.pZ_bugitem').hide();
     })
     .addClass('pZ_icon');
   planZilla.addReleaseImage();

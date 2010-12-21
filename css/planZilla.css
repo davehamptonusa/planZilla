@@ -212,7 +212,6 @@ span.pZ_issueType { /*0,0,1,1*/
 }
 
 #facebox_content {
-  max-height: 500px;
   margin-left: auto;
   margin-right: auto;
   overflow-y: auto;
@@ -226,6 +225,10 @@ span.pZ_issueType { /*0,0,1,1*/
   padding: 10px;
   font-family:"lucida grande",tahoma,verdana,arial,sans-serif
 }
+
+#facebox img{
+  float: left;
+}
 #facebox h2 {
   margin:-10px;
   margin-bottom:0px;
@@ -233,6 +236,8 @@ span.pZ_issueType { /*0,0,1,1*/
   background-color: rgba(250, 178, 11, 0.75);
   padding:5px 10px;
   font-size:20px;
+  text-align:center;
+  height: 1.5em;
 }
 
 button {
@@ -247,4 +252,6 @@ button {
   font-size:11px;
   margin-left: 1em;
   float: right;
+  padding-left: .5em;
+  padding-right: .5em;
 }
