@@ -264,51 +264,42 @@ var planZilla = {
     }
     $('#body-wrapper').prepend(self.create_dom.loading_ajax());
     self.get_tickets([issueID]);
-    $('#title').html($('<p/>', {
-      text: 'planZilla - View Type: ' + issueType.slice(0, -1) + ' Iteration: ' + self[issueType][issueID]
-    }));
-    $('#subtitle, #information').empty();
-    if (issueType === "SPRINTS") {
-      $('#title').append($('<a/>', {
-        text: 'Avaliable Hours:',
-        css: {
-          'float': 'right'
-        },
-        click: function (e) {
-          e.preventDefault();
-          planZilla.flot.sprintGraph();
-        }
-      }));
-    }
   },
   get_top_level_tickets: function () {
     var self = this,
     tickets = [];
-    //temporary for not displaying release tickets...
+
+    //Go through all of the tickets
     $.each(self.bz_tickets, function (key, ticket) {
-        if (ticket.cf_issue_type === 'RELEASE' || ticket.cf_issue_type === 'SPRINT') {
-          delete self.bz_tickets[key];
+      var blockedTicketsRemove = [];
+      //if the ticket is a release or a handoff, don't display it  
+      if (ticket.cf_issue_type !== 'RELEASE' && ticket.cf_issue_type !== 'SPRINT') {
+        //go through its blocked tickets
+        $.each(ticket.blocked, function (i, value) {
+          //if the blocked ticket is a release...
+          if (self.RELEASES[value]) {
+            //remove it from its blocked list
+            blockedTicketsRemove.push(value);
+            //mark the release name
+            ticket.release_name = self.RELEASES[value].replace('Search123_', '');
+          }
+          //if the blocked ticket is a sprint (repeat)
+          if (self.SPRINTS[value]) {
+            blockedTicketsRemove.push(value);
+            ticket.sprint_name = self.SPRINTS[value].replace('Search123_', '');
+          }
+        });
+        //remove the blcoked tickets
+        ticket.blocked = _(ticket.blocked).without(blockedTicketsRemove.join(','));
+        // If after we've removed all of the blocked tickets it's blocked length is 0 - its a top level ticket
+        if (ticket.blocked.length === 0) {
+          tickets.push(key);
         }
-    });
-    $.each(self.bz_tickets, function (key, ticket) {
-      $.each(ticket.blocked, function (i, value) {
-        if (self.RELEASES[value]) {
-          ticket.blocked.remove(i);
-          ticket.release_name = self.RELEASES[value].replace('Search123_', '');
-        }
-        if (self.SPRINTS[value]) {
-          ticket.blocked.remove(i);
-          ticket.sprint_name = self.SPRINTS[value].replace('Search123_', '');
-        }
-      });
-    });
-    //back to normal code
-    $.each(self.bz_tickets, function (key, ticket) {
-      if (ticket.blocked.length === 0) {
-        tickets.push(key);
       }
     });
+    //sort the top level tickets
     self.sort_by_priority(tickets);
+
     return tickets;
   },
   toggle_tickets: function (item, event) {
@@ -338,10 +329,27 @@ var planZilla = {
     decide(item, true);
   },
   draw: function (ticket_list) {
-    var self = this,
-    found_tickets = [];
+    var 
+      self = this,
+      found_tickets = [],
+      issueType = localStorage.getItem('issueType'),
+      issueID = localStorage.getItem('issueID');
+
     $(self.result_field).replaceWith(self.create_dom.buglist_div());
     $('#pZ_loadStatus').remove();
+    $('#title').html($('<p/>', {
+      text: 'planZilla - View Type: ' + issueType.slice(0, -1) + ' Iteration: ' + self[issueType][issueID]
+    }));
+    $('#subtitle, #information').empty();
+    if (issueType === "SPRINTS") {
+      $('#title').append($('<p/>', {
+        text: 'Available Hours: ' + self.bz_tickets[issueID].estimated_time,
+        click: function (e) {
+          e.preventDefault();
+          planZilla.flot.sprintGraph();
+        }
+      }));
+    }
 
     $.each(ticket_list, function (i, value) {
       self.draw_ticket(self.bz_tickets[value]);
@@ -397,9 +405,10 @@ var planZilla = {
       })
       .append(planZilla.stupid_search_phrase());
     },
-    planZilla_box: function() {
+    planZilla_box: function(args) {
+      var label = (args && args.label) ? args.label : '';
       //Creates the  standard box
-      return $('<div id="facebox"><div><h2><img src="' +  chrome.extension.getURL("images/text_icon.png") + '"><button class="close"> Close </button></h2><div id="facebox_content"></div></div></div>')
+      return $('<div id="facebox"><div><h2><img src="' +  chrome.extension.getURL("images/text_icon.png") + '">' + label + '<button class="close"> Close </button></h2><div id="facebox_content"></div></div></div>')
           .appendTo('body')
           .overlay({ 
             expose: {

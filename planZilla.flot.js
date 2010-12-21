@@ -71,7 +71,9 @@
     });
   }
   pvf.sprintGraph = function () {
-    planZilla.create_dom.planZilla_box();
+    planZilla.create_dom.planZilla_box({
+      label: 'Sprint View'
+    });
     $('#facebox_content').append($('<div/>', {
       id: 'flotGraph',
       css: {
