@@ -9,7 +9,7 @@
   margin-right: 10px;
   padding-top: .7em;
   white-space:nowrap;
-  width: 20em;
+  width: 10em;
 }
 
 .pZ_bugHighlight { /*0,0,1,0*/
@@ -201,7 +201,7 @@ span.pZ_issueType { /*0,0,1,1*/
   width:80%;
   margin-left: auto;
   margin-right: auto;
-  max-height:80%;
+  height:80%;
   background-color: rgba(255, 250, 245, 0.85);
   border:10px solid #666;
   /* for modern browsers use semi-transparent color on the border. nice! */
@@ -219,11 +219,13 @@ span.pZ_issueType { /*0,0,1,1*/
   margin-top: 1em;
   margin-bottom: 1em;
   background-color: rgba(255, 250, 245, 0.75);
+  height: 90%;
 }
 
 #facebox > div {
   padding: 10px;
-  font-family:"lucida grande",tahoma,verdana,arial,sans-serif
+  font-family:"lucida grande",tahoma,verdana,arial,sans-serif;
+  height: 100%;
 }
 
 #facebox img{

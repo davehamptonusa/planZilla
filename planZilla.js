@@ -44,7 +44,10 @@ array.remove(-2,-1);
 
 var planZilla = {
   issueTypes: ['RELEASES', 'SPRINTS'],
-  users: {},
+  //planZilla.o is where all of the local data is stored for use and persistence
+  o: {
+    users: {}
+  },
   is_array: function (value) {
     return value &&
         typeof value === 'object' &&
@@ -81,6 +84,17 @@ var planZilla = {
     'Low': 'P4',
     'Lowest': 'P5',
     '--': 'P5'
+  },
+  progressLookup: {
+    'UNCONFIRMED' : 'Not Started',
+    'NEW' : 'Not Started',
+    'LATER' : 'Not Started',
+    'ASSIGNED': 'In Progress',
+    'NEED INFO': 'In Progress',
+    'REOPENED': 'In Progress',
+    'RESOLVED': 'Completed',
+    'VERIFED': 'Completed',
+    'CLOSED': 'Completed'
   },
   class_bz_num: /pZ_\d+/,
   initial_dom: $('table.bz_buglist'),
@@ -171,12 +185,22 @@ var planZilla = {
     ticket_list = $.map(ticket_list, function (value, index) {
       //checks exitence - needs to check timestamp
       return (! self.bz_tickets[value]) ? value : null;
-    });
-    get_arguments = {
-      ctype: 'xml',
-      excludefield: 'attachmentdata',
-      id: ticket_list
+    }),
+    //Set up rpc shell
+    rpcDef = {
+      version: '1.1',
+      method: 'Bugzilla.bug'
     };
+    //define arguments
+    get_arguments = {
+      id: ticket_list,
+      ctype: 'xml',
+      excludefield: 'attachementdata'
+    };
+    //convert to rpc format
+    //rpcDef.params = get_arguments;
+    //get_arguments = JSON.stringify(rpcDef);
+
     if (ticket_list[0]) {
       self.current_ajax_requests++;
     }
@@ -192,8 +216,6 @@ var planZilla = {
         json = $.xml2json(xml),
         timestamp = Number(new Date()),
         found_tickets = [],
-        issueType = localStorage.getItem('issueType'),
-        issueID = localStorage.getItem('issueID');
         array_mods = ['dependson', 'blocked'];
         
         if (json && json.bug) {
@@ -202,7 +224,7 @@ var planZilla = {
           json.bug = self.convert_to_array(json.bug);
           $.each(json.bug, function (i, value) {
             var bug_id;
-            if ((value.cf_issue_type !== 'RELEASE' && value.cf_issue_type !== 'SPRINT') || value.bug_id === issueID) {
+            if ((value.cf_issue_type !== 'RELEASE' && value.cf_issue_type !== 'SPRINT') || value.bug_id === self.o.issueID) {
               if (value.long_desc) {
                 value.long_desc = self.convert_to_array(value.long_desc);
               }
@@ -216,7 +238,7 @@ var planZilla = {
               self.bz_tickets[bug_id].timestamp = timestamp;
               self.bz_tickets[bug_id].priority = self.priority_lookup[value.priority];
               //create object of user_names
-              self.users[value.assigned_to.name] = 1;
+              self.o.users[value.assigned_to.name] =  {};
               //clean out the unnessecary layers
               $.each(array_mods, function (i, key) {
                 $.each(self.bz_tickets[bug_id][key], function (i, d_value) {
@@ -245,9 +267,7 @@ var planZilla = {
   },
   find_initial_tickets: function () {
     var 
-      self = this,
-      issueType = localStorage.getItem('issueType'),
-      issueID = localStorage.getItem('issueID');
+      self = this;
 
     self.bz_tickets = {};
     self.drawn_instance = {};
@@ -263,7 +283,7 @@ var planZilla = {
         return;
     }
     $('#body-wrapper').prepend(self.create_dom.loading_ajax());
-    self.get_tickets([issueID]);
+    self.get_tickets([self.o.issueID]);
   },
   get_top_level_tickets: function () {
     var self = this,
@@ -282,15 +302,20 @@ var planZilla = {
             blockedTicketsRemove.push(value);
             //mark the release name
             ticket.release_name = self.RELEASES[value].replace('Search123_', '');
+            ticket.release_id = value;
           }
           //if the blocked ticket is a sprint (repeat)
           if (self.SPRINTS[value]) {
             blockedTicketsRemove.push(value);
             ticket.sprint_name = self.SPRINTS[value].replace('Search123_', '');
+            ticket.sprint_id = value;
           }
         });
-        //remove the blcoked tickets
-        ticket.blocked = _(ticket.blocked).without(blockedTicketsRemove.join(','));
+        self.calculateUserTime(ticket);
+        //remove the blcoked tickets - most of these becuase of auto type conversion :(
+        _.each(blockedTicketsRemove, function (element) {
+          ticket.blocked = _(ticket.blocked).without(element + '');
+        });
         // If after we've removed all of the blocked tickets it's blocked length is 0 - its a top level ticket
         if (ticket.blocked.length === 0) {
           tickets.push(key);
@@ -301,6 +326,19 @@ var planZilla = {
     self.sort_by_priority(tickets);
 
     return tickets;
+  },
+  calculateUserTime: function (ticket) {
+    var
+      self = this,
+      user = this.o.users[ticket.assigned_to.name],
+      progress =this.progressLookup[ticket.bug_status],
+      slot;
+
+    //see if the ticket is in the sprint
+    if (ticket.sprint_id === self.o.issueID) {
+      //add to the user hash for hours
+      user[progress] = user[progress] ? (user[progress] * 1) + (ticket.estimated_time * 1) : (ticket.estimated_time * 1); 
+    }
   },
   toggle_tickets: function (item, event) {
     var self = this, decide;
@@ -331,19 +369,17 @@ var planZilla = {
   draw: function (ticket_list) {
     var 
       self = this,
-      found_tickets = [],
-      issueType = localStorage.getItem('issueType'),
-      issueID = localStorage.getItem('issueID');
+      found_tickets = [];
 
     $(self.result_field).replaceWith(self.create_dom.buglist_div());
     $('#pZ_loadStatus').remove();
     $('#title').html($('<p/>', {
-      text: 'planZilla - View Type: ' + issueType.slice(0, -1) + ' Iteration: ' + self[issueType][issueID]
+      text: 'planZilla - View Type: ' + self.o.issueType.slice(0, -1) + ' Iteration: ' + self[self.o.issueType][self.o.issueID]
     }));
     $('#subtitle, #information').empty();
-    if (issueType === "SPRINTS") {
+    if (self.o.issueType === "SPRINTS") {
       $('#title').append($('<p/>', {
-        text: 'Available Hours: ' + self.bz_tickets[issueID].estimated_time,
+        text: 'Available Hours: ' + self.bz_tickets[self.o.issueID].estimated_time,
         click: function (e) {
           e.preventDefault();
           planZilla.flot.sprintGraph();
@@ -435,17 +471,17 @@ var planZilla = {
           'html': $('<h3/>', {
             'text': 'Iteration Selector'
           })
-        })),
-        issueType = localStorage.getItem('issueType'),
-        issueID = localStorage.getItem('issueID');
+        }));
         
+      planZilla.o.issueType = localStorage.getItem('issueType');
+      planZilla.o.issueID = localStorage.getItem('issueID');
       //Section to reload current view
-      if (issueType) {
+      if (planZilla.o.issueType) {
         dom.append('<label>Reload: </label>')
         .append(function () {
           var 
             domSelect = $($('<a/>', {
-              text: issueType + ' view of ' + planZilla[issueType][issueID],
+              text: planZilla.o.issueType + ' view of ' + planZilla[planZilla.o.issueType][planZilla.o.issueID],
               click: function(e) {
                 e.preventDefault();
                 planZilla.find_initial_tickets();
@@ -466,6 +502,8 @@ var planZilla = {
           domSelect.change(function() {
             localStorage.setItem('issueType', 'RELEASES');
             localStorage.setItem('issueID', $(this).val());
+            planZilla.o.issueType = 'RELEASES';
+            planZilla.o.issueID = $(this).val();
             planZilla.find_initial_tickets();
             $('button.close').click();
           });
@@ -486,6 +524,8 @@ var planZilla = {
           domSelect.change(function() {
             localStorage.setItem('issueType', 'SPRINTS');
             localStorage.setItem('issueID', $(this).val());
+            planZilla.o.issueType = 'SPRINTS';
+            planZilla.o.issueID = $(this).val();
             planZilla.find_initial_tickets();
             $('button.close').click();
           });
@@ -519,7 +559,9 @@ var planZilla = {
     },
     ticket_comments: function () {
       var self = this,
-      pZ_box = $(planZilla.create_dom.planZilla_box());
+      pZ_box = $(planZilla.create_dom.planZilla_box({
+        label: 'Comments for ' + self.bug_id
+      }));
       $.each(self.long_desc, function (key, value) {
         if (! value.thetext) {
           return true;
@@ -559,7 +601,9 @@ var planZilla = {
       var self = this, i, display_table, row, attachment
       attachment_length = this.attachment.length;
 
-      pZ_box = $(planZilla.create_dom.planZilla_box());
+      pZ_box = $(planZilla.create_dom.planZilla_box({
+        label: 'Attachments for ' + self.bug_id
+      }));
       display_table = $('<table/>', {
         'class': 'pZ_attachmentTable',
         'html': $('<thead><tr><th>Attachment</th><th>Type</th><th>Creator</th><th>Date</th><th>Size</th><tr>,</thead>')
@@ -632,7 +676,8 @@ var planZilla = {
         'class': 'pZ_bugNum pZ_floatLeft',
         'html': $('<a/>', {
           'href': 'https://bugzilla.vclk.net/show_bug.cgi?id=' + self.bug_id,
-          'text': self.bug_id
+          'text': self.bug_id,
+          'target': '_blank'
         })
       }))
       .append($('<div/>', {
@@ -704,12 +749,12 @@ var planZilla = {
       .append($('<div/>', {
         'class': 'pZ_floatRight pZ_Release',
         'text': self.release_name,
-        'title': 'Release'
+        'title': 'Release: ' + self.release_id
       }))
       .append($('<div/>', {
         'class': 'pZ_floatRight pZ_Release',
         'text': self.sprint_name,
-        'title': 'Sprint'
+        'title': 'Sprint: ' + self.sprint_id
       }))
       .append($('<div/>', {
         'class': 'clear'
@@ -833,6 +878,11 @@ $(document).ready(function () {
     .click( function () {
       planZilla.create_dom.iterationSelector();
       $('#banner-name').css('backgroundImage', 'url(' + chrome.extension.getURL("images/Replacement_Header.png") + ')');
+    })
+    // right click logo to reload current page
+    .bind('contextmenu', function(e) {
+      planZilla.find_initial_tickets();
+      return false;
     })
     .addClass('pZ_icon');
   planZilla.addReleaseImage();
