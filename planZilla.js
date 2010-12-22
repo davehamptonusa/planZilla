@@ -172,10 +172,12 @@ var planZilla = {
     //go through the types of tickets (RELEASES or SPRINTS)
     list = JSON.parse(localStorage.getItem(type));
     list_length = list.length;
-    //just loading the short description now...
-    self[type] = {};
+    //Load into planZilla.o.[RELEASES|SPRINTS][BUG_ID].
+    self.o[type] = {};
     for (j=list_length; j--;) {
-      self[type][list[j].bug_id] = list[j].short_desc;
+      self.o[type][list[j].bug_id] = list[j];
+      //Create a place to hold user hours per cycle
+      self.o[type][list[j].bug_id].users = {};
     }
   },
   get_tickets: function (ticket_list) {
@@ -238,7 +240,7 @@ var planZilla = {
               self.bz_tickets[bug_id].timestamp = timestamp;
               self.bz_tickets[bug_id].priority = self.priority_lookup[value.priority];
               //create object of user_names
-              self.o.users[value.assigned_to.name] =  {};
+              self.o[self.o.issueType][self.o.issueID].users[value.assigned_to.name] =  {};
               //clean out the unnessecary layers
               $.each(array_mods, function (i, key) {
                 $.each(self.bz_tickets[bug_id][key], function (i, d_value) {
@@ -265,12 +267,18 @@ var planZilla = {
       }
     });
   },
-  find_initial_tickets: function () {
+  initiate: function () {
     var 
       self = this;
-
+    //load issueType if not loaded
+    planZilla.o.issueType || (planZilla.o.issueType = localStorage.getItem('issueType'));
+    planZilla.o.issueID  || (planZilla.o.issueID = localStorage.getItem('issueID'));
+    
+    // Reset these here, as get_tickets is recursive....
     self.bz_tickets = {};
     self.drawn_instance = {};
+
+    //Figure out where it loads on the screen
     switch(window.location.pathname) {
       case ("/show_bug.cgi"):
         self.result_field = 'form[name="changeform"]'
@@ -278,10 +286,14 @@ var planZilla = {
       case ("/buglist.cgi"):
         self.result_field = 'table.bz_buglist'
         break;
+      case ("/"):
+        self.result_field = '#page-index'
+        break;
       default:
         alert('You can only planZilla-ize a buglist or a show_bug page.');
         return;
     }
+    
     $('#body-wrapper').prepend(self.create_dom.loading_ajax());
     self.get_tickets([self.o.issueID]);
   },
@@ -297,17 +309,17 @@ var planZilla = {
         //go through its blocked tickets
         $.each(ticket.blocked, function (i, value) {
           //if the blocked ticket is a release...
-          if (self.RELEASES[value]) {
+          if (self.o.RELEASES[value]) {
             //remove it from its blocked list
             blockedTicketsRemove.push(value);
             //mark the release name
-            ticket.release_name = self.RELEASES[value].replace('Search123_', '');
+            ticket.release_name = self.o.RELEASES[value].short_desc.replace('Search123_', '');
             ticket.release_id = value;
           }
           //if the blocked ticket is a sprint (repeat)
-          if (self.SPRINTS[value]) {
+          if (self.o.SPRINTS[value]) {
             blockedTicketsRemove.push(value);
-            ticket.sprint_name = self.SPRINTS[value].replace('Search123_', '');
+            ticket.sprint_name = self.o.SPRINTS[value].short_desc.replace('Search123_', '');
             ticket.sprint_id = value;
           }
         });
@@ -330,7 +342,7 @@ var planZilla = {
   calculateUserTime: function (ticket) {
     var
       self = this,
-      user = this.o.users[ticket.assigned_to.name],
+      user = this.o[this.o.issueType][this.o.issueID].users[ticket.assigned_to.name],
       progress =this.progressLookup[ticket.bug_status],
       slot;
 
@@ -374,7 +386,7 @@ var planZilla = {
     $(self.result_field).replaceWith(self.create_dom.buglist_div());
     $('#pZ_loadStatus').remove();
     $('#title').html($('<p/>', {
-      text: 'planZilla - View Type: ' + self.o.issueType.slice(0, -1) + ' Iteration: ' + self[self.o.issueType][self.o.issueID]
+      text: 'planZilla - View Type: ' + self.o.issueType.slice(0, -1) + ' Iteration: ' + self.o[self.o.issueType][self.o.issueID].short_desc
     }));
     $('#subtitle, #information').empty();
     if (self.o.issueType === "SPRINTS") {
@@ -433,7 +445,8 @@ var planZilla = {
         'id': 'pZ_loadStatus',
         'css': {
           textAlign: 'center',
-          fontWeight: 'bold'
+          fontWeight: 'bold',
+          background: 'url(' + chrome.extension.getURL("images/planZilla_bkg.png") + ') repeat'
         },
         'html': $('<img/>',  {
           'src': chrome.extension.getURL("images/ajax-loader.gif")
@@ -481,10 +494,10 @@ var planZilla = {
         .append(function () {
           var 
             domSelect = $($('<a/>', {
-              text: planZilla.o.issueType + ' view of ' + planZilla[planZilla.o.issueType][planZilla.o.issueID],
+              text: planZilla.o.issueType + ' view of ' + planZilla.o[planZilla.o.issueType][planZilla.o.issueID].short_desc,
               click: function(e) {
                 e.preventDefault();
-                planZilla.find_initial_tickets();
+                planZilla.initiate();
                 $('button.close').click();
               }
             }));
@@ -504,12 +517,12 @@ var planZilla = {
             localStorage.setItem('issueID', $(this).val());
             planZilla.o.issueType = 'RELEASES';
             planZilla.o.issueID = $(this).val();
-            planZilla.find_initial_tickets();
+            planZilla.initiate();
             $('button.close').click();
           });
           domSelect.append('<option disabled>---</option>');
-          $.each(planZilla.RELEASES, function(key,value) {
-            domSelect.append('<option value = "' + key + '" >' + value + '</option>');
+          $.each(planZilla.o.RELEASES, function(key,value) {
+            domSelect.append('<option value = "' + key + '" >' + value.short_desc + '</option>');
           });
 
           return domSelect;
@@ -526,12 +539,12 @@ var planZilla = {
             localStorage.setItem('issueID', $(this).val());
             planZilla.o.issueType = 'SPRINTS';
             planZilla.o.issueID = $(this).val();
-            planZilla.find_initial_tickets();
+            planZilla.initiate();
             $('button.close').click();
           });
           domSelect.append('<option disabled>---</option>');
-          $.each(planZilla.SPRINTS, function(key,value) {
-            domSelect.append('<option value = "' + key + '" >' + value + '</option>');
+          $.each(planZilla.o.SPRINTS, function(key,value) {
+            domSelect.append('<option value = "' + key + '" >' + value.short_desc + '</option>');
           });
 
           return domSelect;
@@ -881,7 +894,7 @@ $(document).ready(function () {
     })
     // right click logo to reload current page
     .bind('contextmenu', function(e) {
-      planZilla.find_initial_tickets();
+      planZilla.initiate();
       return false;
     })
     .addClass('pZ_icon');
