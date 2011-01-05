@@ -323,7 +323,7 @@ var planZilla = {
             ticket.sprint_id = value;
           }
         });
-        self.calculateUserTime(ticket);
+        self.calculateUserTime(ticket, self.o.issueID);
         //remove the blcoked tickets - most of these becuase of auto type conversion :(
         _.each(blockedTicketsRemove, function (element) {
           ticket.blocked = _(ticket.blocked).without(element + '');
@@ -339,15 +339,15 @@ var planZilla = {
 
     return tickets;
   },
-  calculateUserTime: function (ticket) {
+  calculateUserTime: function (ticket, sprint) {
     var
       self = this,
-      user = this.o[this.o.issueType][this.o.issueID].users[ticket.assigned_to.name],
-      progress =this.progressLookup[ticket.bug_status],
-      slot;
+      user = (this.o[this.o.issueType][sprint].users[ticket.assigned_to.name]) ? this.o[this.o.issueType][sprint].users[ticket.assigned_to.name]
+        : this.o[this.o.issueType][sprint].users[ticket.assigned_to.name] = {},
+      progress = (this.progressLookup[ticket.bug_status]) ? this.progressLookup[ticket.bug_status] : 'Not Started';
 
     //see if the ticket is in the sprint
-    if (ticket.sprint_id === self.o.issueID) {
+    if (ticket.sprint_id === sprint) {
       //add to the user hash for hours
       user[progress] = user[progress] ? (user[progress] * 1) + (ticket.estimated_time * 1) : (ticket.estimated_time * 1); 
     }
@@ -457,7 +457,7 @@ var planZilla = {
     planZilla_box: function(args) {
       var label = (args && args.label) ? args.label : '';
       //Creates the  standard box
-      return $('<div id="facebox"><div><h2><img src="' +  chrome.extension.getURL("images/text_icon.png") + '">' + label + '<button class="close"> Close </button></h2><div id="facebox_content"></div></div></div>')
+      return $('<div id="facebox"><div><h2><img src="' +  chrome.extension.getURL("images/text_icon.png") + '"><span>' + label + '</span><button class="close"> Close </button></h2><div id="facebox_content"></div></div></div>')
           .appendTo('body')
           .overlay({ 
             expose: {

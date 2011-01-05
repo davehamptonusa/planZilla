@@ -1,4 +1,9 @@
 starting from Version 0.1.8
+0.3.2
+Now you can scan forward in the sprint view and see if there is space
+available in future sprints.  The estimated hours for the sprint itself
+refresh on the "refresh sprints button in the initial selection screen"
+
 0.3.0
 Added ability to handle sprints as well as releases and display both.  You can
 search by either a release or a sprint.  It remembers past browser sessioons
