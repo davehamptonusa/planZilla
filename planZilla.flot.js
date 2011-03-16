@@ -10,14 +10,17 @@
     getData;
 
 
-  loadSprintData = function (sprint) {
-    var data =  {
-      'field0-0-0': 'blocked',
-      'query_format': 'advanced',
-      'type0-0-0': 'equals',
-      'value0-0-0':  sprint,
-      'ctype': 'xml'
-    };
+  loadSprintData = function (aSprint) {
+    var 
+      data =  {
+        'field0-0-0': 'blocked',
+        'query_format': 'advanced',
+        'type0-0-0': 'equals',
+        'value0-0-0':  aSprint,
+        'ctype': 'xml'
+      };
+      sprint = planZilla.o.sharer_id + '-' + planZilla.o.sprint_label;
+
     $.ajax({
       url: 'https://bugzilla.vclk.net/buglist.cgi',
       data: data,
@@ -55,13 +58,13 @@
                 // so we need to nest it in an array
                 json.bug = planZilla.convert_to_array(json.bug);
                 //empty out the hours for the sprint;
-                planZilla.o.SPRINTS[sprint].users = {};
+                planZilla.o[sprint][aSprint].users = {};
                 $.each(json.bug, function (i, value) {
                   //mark the bug as belonging to this sprint
-                  value.sprint_id = sprint;
-                  planZilla.calculateUserTime(value, sprint);
+                  value.sprint_id = aSprint;
+                  planZilla.calculateUserTime(value, aSprint);
                 });
-                plotWithOptions(sprint);
+                plotWithOptions(aSprint);
               }
             }
           });
@@ -73,11 +76,12 @@
     });
   }
 
-  getData = function (users, usersLength, graphSpec, sprint) {
+  getData = function (users, usersLength, graphSpec, aSprint) {
     // Puts the data in the right format for flot
     var
       i,
       statusLength = status.length,
+      sprint = planZilla.o.sharer_id + '-' + planZilla.o.sprint_label,
       total = {
         label: 'Total',
         data: []
@@ -95,7 +99,7 @@
          spec.data = [];
          total_hours = 0;
          for (var j = 0; j < usersLength; j += 1) {
-           hours = planZilla.o.SPRINTS[sprint].users[users[j]][status[i]] || 0;
+           hours = planZilla.o[sprint][aSprint].users[users[j]][status[i]] || 0;
            spec.data.push([j, hours]);
            total_hours += hours;
          }
@@ -105,8 +109,9 @@
     }
   }; 
 
-  determineSprint = function (sprint) {
-    var isThisSprint = (sprint === planZilla.o.issueID ? true: false),
+  determineSprint = function (aSprint) {
+    var isThisSprint = (aSprint === planZilla.o.issueID ? true: false),
+      sprint = planZilla.o.sharer_id + '-' + planZilla.o.sprint_label,
       flotGraph = $("#flotGraph");
 
     if (!isThisSprint) {
@@ -116,16 +121,16 @@
     }))
     .append("Loading...")
     .prepend('</br>');
-    $('#facebox>div>h2>span').after().text(planZilla.o.SPRINTS[sprint].short_desc + ' Sprint :: ' + planZilla.o.SPRINTS[sprint].estimated_time + ' hours');
+    $('#facebox>div>h2>span').after().text(planZilla.o[sprint][aSprint].short_desc + ' Sprint :: ' + planZilla.o[sprint][aSprint].estimated_time + ' hours');
       //load the correct data and populate the user database
-      loadSprintData(sprint);
+      loadSprintData(aSprint);
     }
     else {
-      plotWithOptions(sprint);
+      plotWithOptions(aSprint);
     }
   }
 
-  plotWithOptions =  function (sprint) {
+  plotWithOptions =  function (aSprint) {
     var
       o,
       flotGraph = $("#flotGraph"),
@@ -136,10 +141,10 @@
       ticks;
     
     // Update the user string
-    users = _(planZilla.o[planZilla.o.issueType][sprint].users).keys(),
+    users = _(planZilla.o[planZilla.o.issueType][aSprint].users).keys(),
     usersLength = users.length;
     //Get data
-    getData(users, usersLength, graphSpec, sprint);
+    getData(users, usersLength, graphSpec, aSprint);
     // get the ticks and ;labels for the x -axis
     ticks = (function () {
       var 
@@ -176,7 +181,8 @@
   }
 
   pvf.sprintGraph = function () {
-    var sprintTicket = planZilla.bz_tickets[planZilla.o.issueID];
+    var sprintTicket = planZilla.bz_tickets[planZilla.o.issueID],
+      sprint = planZilla.o.sharer_id + '-' + planZilla.o.sprint_label;
 
     planZilla.create_dom.planZilla_box({
     label: sprintTicket.short_desc + ' Sprint :: ' + sprintTicket.estimated_time + ' hours'
@@ -193,7 +199,7 @@
       
       domSelect.append('<option disabled>---</option>');
       
-      $.each(planZilla.o.SPRINTS, function(key,value) {
+      $.each(planZilla.o[sprint], function(key,value) {
         domSelect.append('<option value = "' + key + '" >' + value.short_desc + '</option>');
       });
 

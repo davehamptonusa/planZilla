@@ -1,4 +1,18 @@
 starting from Version 0.1.8
+0.3.3
+So now you can set the environment instead of being  forced to use Search123.
+The product manager should set tickets in bz that hold all the sprints and
+releases.  When they make those a shared search, the user needs to get the
+sharer id and the save name and input them in the appropriate fields.  This is
+not yet stored in local memory - so sadly, you'll have to do it everytime you
+open a browser.  That'll be fixed soon enough.
+
+Also, you can now click on the type icon (the one on the far left) to pull up
+the buigzilla dependecy graph.
+
+Plus, the somewhat loud background has been toned down alot.  Not that I like
+this.  But I get the point.
+
 0.3.2
 Now you can scan forward in the sprint view and see if there is space
 available in future sprints.  The estimated hours for the sprint itself

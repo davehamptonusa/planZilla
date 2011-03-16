@@ -43,9 +43,11 @@ array.remove(-2,-1);
 
 
 var planZilla = {
-  issueTypes: ['RELEASES', 'SPRINTS'],
   //planZilla.o is where all of the local data is stored for use and persistence
   o: {
+    sharer_id: 2405,
+    release_label: 'RELEASES',
+    sprint_label: 'SPRINTS',
     users: {}
   },
   is_array: function (value) {
@@ -120,30 +122,35 @@ var planZilla = {
     var 
       self = this,
       get_arguments = {
-      ctype: 'xml',
-      sharer_id: 2405,
-      remaction: 'run',
-      cmdtype: 'dorem'
+        ctype: 'xml',
+        sharer_id: planZilla.o.sharer_id,
+        remaction: 'run',
+        cmdtype: 'dorem'
       },
       i,
-      types;
+      types,
+      issues,
+      release = planZilla.o.sharer_id + '-' + planZilla.o.release_label,
+      sprint = planZilla.o.sharer_id + '-' + planZilla.o.sprint_label;
 
+    issues = [planZilla.o.release_label, planZilla.o.sprint_label];
+    issueLabels = [release, sprint];
     //if we are forcing a refresh or we dont' have data refresh the list
-    if ( force || !(localStorage.getItem('RELEASES')) || !(localStorage.getItem('SPRINTS'))) {
-      for (i=self.issueTypes.length; i--; ) {
-        get_arguments.namedcmd = self.issueTypes[i];
+    if ( force || !(localStorage.getItem(release)) || !(localStorage.getItem(sprint))) {
+      for (i=issues.length; i--; ) {
+        get_arguments.namedcmd = issues[i];
         $.ajax({
           url: 'https://bugzilla.vclk.net/buglist.cgi',
           data: get_arguments,
-          ajax_data: get_arguments.namedcmd,
+          ajax_data: [issues[i],issueLabels[i]],
           cache: false,
           traditional: true,
           type: 'get',
           async: true,
           success: function (xml, textStatus, XMLHttpRequest) {
             var json = $.xml2json(xml);
-            localStorage.setItem(this.ajax_data, JSON.stringify(json.issue));
-            self.getLists(this.ajax_data);
+            localStorage.setItem(this.ajax_data[1], JSON.stringify(json.issue));
+            self.getLists(this.ajax_data[1]);
             if (callback) {
               callback();
             }
@@ -155,8 +162,8 @@ var planZilla = {
       }
     }
     else {
-      self.getLists('RELEASES');
-      self.getLists('SPRINTS');
+      self.getLists(release);
+      self.getLists(sprint);
       if (callback) {
         callback();
       }
@@ -299,7 +306,10 @@ var planZilla = {
   },
   get_top_level_tickets: function () {
     var self = this,
-    tickets = [];
+      tickets = [],
+      release = planZilla.o.sharer_id + '-' + planZilla.o.release_label,
+      sprint = planZilla.o.sharer_id + '-' + planZilla.o.sprint_label;
+
 
     //Go through all of the tickets
     $.each(self.bz_tickets, function (key, ticket) {
@@ -309,17 +319,17 @@ var planZilla = {
         //go through its blocked tickets
         $.each(ticket.blocked, function (i, value) {
           //if the blocked ticket is a release...
-          if (self.o.RELEASES[value]) {
+          if (self.o[release][value]) {
             //remove it from its blocked list
             blockedTicketsRemove.push(value);
             //mark the release name
-            ticket.release_name = self.o.RELEASES[value].short_desc.replace('Search123_', '');
+            ticket.release_name = self.o[release][value].short_desc.replace('Search123_', '');
             ticket.release_id = value;
           }
           //if the blocked ticket is a sprint (repeat)
-          if (self.o.SPRINTS[value]) {
+          if (self.o[sprint][value]) {
             blockedTicketsRemove.push(value);
-            ticket.sprint_name = self.o.SPRINTS[value].short_desc.replace('Search123_', '');
+            ticket.sprint_name = self.o[sprint][value].short_desc.replace('Search123_', '');
             ticket.sprint_id = value;
           }
         });
@@ -381,6 +391,8 @@ var planZilla = {
   draw: function (ticket_list) {
     var 
       self = this,
+      release = planZilla.o.sharer_id + '-' + planZilla.o.release_label,
+      sprint = planZilla.o.sharer_id + '-' + planZilla.o.sprint_label,
       found_tickets = [];
 
     $(self.result_field).replaceWith(self.create_dom.buglist_div());
@@ -389,7 +401,7 @@ var planZilla = {
       text: 'planZilla - View Type: ' + self.o.issueType.slice(0, -1) + ' Iteration: ' + self.o[self.o.issueType][self.o.issueID].short_desc
     }));
     $('#subtitle, #information').empty();
-    if (self.o.issueType === "SPRINTS") {
+    if (self.o.issueType === sprint) {
       $('#title').append($('<p/>', {
         text: 'Available Hours: ' + self.bz_tickets[self.o.issueID].estimated_time,
         click: function (e) {
@@ -479,12 +491,65 @@ var planZilla = {
       var 
         self = this,
         pZ_box = $(planZilla.create_dom.planZilla_box()),
+        release = planZilla.o.sharer_id + '-' + planZilla.o.release_label,
+        sprint = planZilla.o.sharer_id + '-' + planZilla.o.sprint_label,
         dom = $('<div/>')
         .append($('<div/>', {
           'html': $('<h3/>', {
-            'text': 'Iteration Selector'
+            'text': 'Environment Selector'
           })
         }));
+
+      //Section to reload current view
+      dom.append('<br><br>')
+      .append('<label>Sharer ID: </label>')
+      .append($('<input/>', {
+            name: 'sharer_selector',
+            value: planZilla.o.sharer_id || '',
+            change: function () {
+              planZilla.o.sharer_id = $(this).val()
+            }
+      }));
+      dom.append('<br><br>')
+      .append('<label>Release Label: </label>')
+      .append($('<input/>', {
+            name: 'release_selector',
+            value: planZilla.o.release_label || '',
+            change: function () {
+              planZilla.o.release_label = $(this).val()
+            }
+      }));
+      dom.append('<br><br>')
+      .append('<label>Sprint Label: </label>')
+      .append($('<input/>', {
+            name: 'sprint_selector',
+            value: planZilla.o.sprint_label || '',
+            change: function () {
+              planZilla.o.sprint_label = $(this).val()
+            }
+      }));
+      dom.append('<br><br>')
+      .append('<label>Refresh: </label>')
+      .append(function () {
+        var 
+          domSelect = $($('<a/>', {
+            text: 'Click to refresh release and sprint list',
+            click: function(e) {
+              e.preventDefault();
+              // get new lists and reopen it
+              planZilla.refreshLists(1, function() {
+                $('#banner').click();
+              });
+            }
+          }));
+        return domSelect;
+      })
+      .append('<br><br>')
+      .append($('<div/>', {
+        'html': $('<h3/>', {
+          'text': 'View Selector'
+        })
+      }));
         
       planZilla.o.issueType = localStorage.getItem('issueType');
       planZilla.o.issueID = localStorage.getItem('issueID');
@@ -513,15 +578,15 @@ var planZilla = {
           domSelect = $('<select id ="RELEASE_SELECTOR"></select>');
 
           domSelect.change(function() {
-            localStorage.setItem('issueType', 'RELEASES');
+            localStorage.setItem('issueType', release);
             localStorage.setItem('issueID', $(this).val());
-            planZilla.o.issueType = 'RELEASES';
+            planZilla.o.issueType = release;
             planZilla.o.issueID = $(this).val();
             planZilla.initiate();
             $('button.close').click();
           });
           domSelect.append('<option disabled>---</option>');
-          $.each(planZilla.o.RELEASES, function(key,value) {
+          $.each(planZilla.o[release], function(key,value) {
             domSelect.append('<option value = "' + key + '" >' + value.short_desc + '</option>');
           });
 
@@ -535,38 +600,21 @@ var planZilla = {
           domSelect = $('<select id ="SPRINT_SELECTOR"></select>');
 
           domSelect.change(function() {
-            localStorage.setItem('issueType', 'SPRINTS');
+            localStorage.setItem('issueType', sprint);
             localStorage.setItem('issueID', $(this).val());
-            planZilla.o.issueType = 'SPRINTS';
+            planZilla.o.issueType = sprint;
             planZilla.o.issueID = $(this).val();
             planZilla.initiate();
             $('button.close').click();
           });
           domSelect.append('<option disabled>---</option>');
-          $.each(planZilla.o.SPRINTS, function(key,value) {
+          $.each(planZilla.o[sprint], function(key,value) {
             domSelect.append('<option value = "' + key + '" >' + value.short_desc + '</option>');
           });
 
           return domSelect;
         });
-      //Section to reload current view
-      dom.append('<br><br>')
-      .append('<label>Refresh: </label>')
-      .append(function () {
-        var 
-          domSelect = $($('<a/>', {
-            text: 'Click to refresh release and sprint list',
-            click: function(e) {
-              e.preventDefault();
-              // get new lists and reopen it
-              planZilla.refreshLists(1, function() {
-                $('#banner').click();
-              });
-            }
-          }));
 
-        return domSelect;
-      });
       $('#facebox_content').append(dom);
       //return pZ_box;
     },
@@ -681,7 +729,11 @@ var planZilla = {
           'class': 'pZ_issueType',
           'title': self.cf_issue_type,
           'css': {
-            'background': 'url(' + chrome.extension.getURL("images/bug_status/" + self.cf_issue_type.replace(/\s/g,"_") + ".png") + ') center no-repeat'
+            'background': 'url(' + chrome.extension.getURL("images/bug_status/" + self.cf_issue_type.replace(/\s/g,"_") + ".png") + ') center no-repeat',
+            'cursor': 'pointer'
+          },
+          'click': function () {
+            window.open('https://bugzilla.vclk.net/showdependencygraph.cgi?id=' + self.bug_id + '&display=tree&rankdir=RL');
           }
         })
       }))
