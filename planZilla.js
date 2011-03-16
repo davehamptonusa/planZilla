@@ -45,9 +45,9 @@ array.remove(-2,-1);
 var planZilla = {
   //planZilla.o is where all of the local data is stored for use and persistence
   o: {
-    sharer_id: 2405,
-    release_label: 'RELEASES',
-    sprint_label: 'SPRINTS',
+    sharer_id: localStorage.getItem('sharer_id'),
+    release_label: localStorage.getItem('release_label'),
+    sprint_label: localStorage.getItem('sprint_label'),
     users: {}
   },
   is_array: function (value) {
@@ -133,39 +133,42 @@ var planZilla = {
       release = planZilla.o.sharer_id + '-' + planZilla.o.release_label,
       sprint = planZilla.o.sharer_id + '-' + planZilla.o.sprint_label;
 
-    issues = [planZilla.o.release_label, planZilla.o.sprint_label];
-    issueLabels = [release, sprint];
-    //if we are forcing a refresh or we dont' have data refresh the list
-    if ( force || !(localStorage.getItem(release)) || !(localStorage.getItem(sprint))) {
-      for (i=issues.length; i--; ) {
-        get_arguments.namedcmd = issues[i];
-        $.ajax({
-          url: 'https://bugzilla.vclk.net/buglist.cgi',
-          data: get_arguments,
-          ajax_data: [issues[i],issueLabels[i]],
-          cache: false,
-          traditional: true,
-          type: 'get',
-          async: true,
-          success: function (xml, textStatus, XMLHttpRequest) {
-            var json = $.xml2json(xml);
-            localStorage.setItem(this.ajax_data[1], JSON.stringify(json.issue));
-            self.getLists(this.ajax_data[1]);
-            if (callback) {
-              callback();
+    //Check to see if we have an environement set
+    if (self.o.sharer_id && self.o.release_label && self.o.sprint_label) {
+      issues = [planZilla.o.release_label, planZilla.o.sprint_label];
+      issueLabels = [release, sprint];
+      //if we are forcing a refresh or we dont' have data refresh the list
+      if ( force || !(localStorage.getItem(release)) || !(localStorage.getItem(sprint))) {
+        for (i=issues.length; i--; ) {
+          get_arguments.namedcmd = issues[i];
+          $.ajax({
+            url: 'https://bugzilla.vclk.net/buglist.cgi',
+            data: get_arguments,
+            ajax_data: [issues[i],issueLabels[i]],
+            cache: false,
+            traditional: true,
+            type: 'get',
+            async: true,
+            success: function (xml, textStatus, XMLHttpRequest) {
+              var json = $.xml2json(xml);
+              localStorage.setItem(this.ajax_data[1], JSON.stringify(json.issue));
+              self.getLists(this.ajax_data[1]);
+              if (callback) {
+                callback();
+              }
+            },
+            error: function () {
+              console.log('error')
             }
-          },
-          error: function () {
-            console.log('error')
-          }
-        });
+          });
+        }
       }
-    }
-    else {
-      self.getLists(release);
-      self.getLists(sprint);
-      if (callback) {
-        callback();
+      else {
+        self.getLists(release);
+        self.getLists(sprint);
+        if (callback) {
+          callback();
+        }
       }
     }
   },
@@ -508,6 +511,7 @@ var planZilla = {
             value: planZilla.o.sharer_id || '',
             change: function () {
               planZilla.o.sharer_id = $(this).val()
+              localStorage.setItem('sharer_id', planZilla.o.sharer_id); 
             }
       }));
       dom.append('<br><br>')
@@ -517,6 +521,7 @@ var planZilla = {
             value: planZilla.o.release_label || '',
             change: function () {
               planZilla.o.release_label = $(this).val()
+              localStorage.setItem('release_label', planZilla.o.release_label); 
             }
       }));
       dom.append('<br><br>')
@@ -526,6 +531,7 @@ var planZilla = {
             value: planZilla.o.sprint_label || '',
             change: function () {
               planZilla.o.sprint_label = $(this).val()
+              localStorage.setItem('sprint_label', planZilla.o.sprint_label); 
             }
       }));
       dom.append('<br><br>')
@@ -538,83 +544,86 @@ var planZilla = {
               e.preventDefault();
               // get new lists and reopen it
               planZilla.refreshLists(1, function() {
-                $('#banner').click();
+                $('button.close').click();
               });
             }
           }));
         return domSelect;
-      })
-      .append('<br><br>')
-      .append($('<div/>', {
-        'html': $('<h3/>', {
-          'text': 'View Selector'
-        })
-      }));
-        
-      planZilla.o.issueType = localStorage.getItem('issueType');
-      planZilla.o.issueID = localStorage.getItem('issueID');
-      //Section to reload current view
-      if (planZilla.o.issueType) {
-        dom.append('<label>Reload: </label>')
+      });
+      //Only run this if we have an environment
+      if (planZilla.o.sharer_id && planZilla.o.release_label && planZilla.o.sprint_label) {
+
+        dom.append('<br><br>')
+        .append($('<div/>', {
+          'html': $('<h3/>', {
+            'text': 'View Selector'
+          })
+        }));
+          
+        planZilla.o.issueType = localStorage.getItem('issueType');
+        planZilla.o.issueID = localStorage.getItem('issueID');
+        //Section to reload current view
+        if (planZilla.o.issueType) {
+          dom.append('<label>Reload: </label>')
+          .append(function () {
+            var 
+              domSelect = $($('<a/>', {
+                text: planZilla.o.issueType + ' view of ' + planZilla.o[planZilla.o.issueType][planZilla.o.issueID].short_desc,
+                click: function(e) {
+                  e.preventDefault();
+                  planZilla.initiate();
+                  $('button.close').click();
+                }
+              }));
+
+            return domSelect;
+          })
+        }
+        //Section for release drop down
+        dom.append('<br><br>')
+        .append('<label for="RELEASE_SELECTOR">Release: </label>')
         .append(function () {
           var 
-            domSelect = $($('<a/>', {
-              text: planZilla.o.issueType + ' view of ' + planZilla.o[planZilla.o.issueType][planZilla.o.issueID].short_desc,
-              click: function(e) {
-                e.preventDefault();
-                planZilla.initiate();
-                $('button.close').click();
-              }
-            }));
+            domSelect = $('<select id ="RELEASE_SELECTOR"></select>');
 
-          return domSelect;
-        })
-      }
-      //Section for release drop down
-      dom.append('<br><br>')
-      .append('<label for="RELEASE_SELECTOR">Release: </label>')
-      .append(function () {
-        var 
-          domSelect = $('<select id ="RELEASE_SELECTOR"></select>');
+            domSelect.change(function() {
+              localStorage.setItem('issueType', release);
+              localStorage.setItem('issueID', $(this).val());
+              planZilla.o.issueType = release;
+              planZilla.o.issueID = $(this).val();
+              planZilla.initiate();
+              $('button.close').click();
+            });
+            domSelect.append('<option disabled>---</option>');
+            $.each(planZilla.o[release], function(key,value) {
+              domSelect.append('<option value = "' + key + '" >' + value.short_desc + '</option>');
+            });
 
-          domSelect.change(function() {
-            localStorage.setItem('issueType', release);
-            localStorage.setItem('issueID', $(this).val());
-            planZilla.o.issueType = release;
-            planZilla.o.issueID = $(this).val();
-            planZilla.initiate();
-            $('button.close').click();
+            return domSelect;
+          })
+        //Section for sprint drop down
+        .append('<br><br>')
+        .append('<label for="SPRINT_SELECTOR">Sprint: </label>')
+        .append(function () {
+          var 
+            domSelect = $('<select id ="SPRINT_SELECTOR"></select>');
+
+            domSelect.change(function() {
+              localStorage.setItem('issueType', sprint);
+              localStorage.setItem('issueID', $(this).val());
+              planZilla.o.issueType = sprint;
+              planZilla.o.issueID = $(this).val();
+              planZilla.initiate();
+              $('button.close').click();
+            });
+            domSelect.append('<option disabled>---</option>');
+            $.each(planZilla.o[sprint], function(key,value) {
+              domSelect.append('<option value = "' + key + '" >' + value.short_desc + '</option>');
+            });
+
+            return domSelect;
           });
-          domSelect.append('<option disabled>---</option>');
-          $.each(planZilla.o[release], function(key,value) {
-            domSelect.append('<option value = "' + key + '" >' + value.short_desc + '</option>');
-          });
-
-          return domSelect;
-        })
-      //Section for sprint drop down
-      .append('<br><br>')
-      .append('<label for="SPRINT_SELECTOR">Sprint: </label>')
-      .append(function () {
-        var 
-          domSelect = $('<select id ="SPRINT_SELECTOR"></select>');
-
-          domSelect.change(function() {
-            localStorage.setItem('issueType', sprint);
-            localStorage.setItem('issueID', $(this).val());
-            planZilla.o.issueType = sprint;
-            planZilla.o.issueID = $(this).val();
-            planZilla.initiate();
-            $('button.close').click();
-          });
-          domSelect.append('<option disabled>---</option>');
-          $.each(planZilla.o[sprint], function(key,value) {
-            domSelect.append('<option value = "' + key + '" >' + value.short_desc + '</option>');
-          });
-
-          return domSelect;
-        });
-
+        }
       $('#facebox_content').append(dom);
       //return pZ_box;
     },
