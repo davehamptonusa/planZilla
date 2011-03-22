@@ -181,6 +181,9 @@ var planZilla = {
 
     //go through the types of tickets (RELEASES or SPRINTS)
     list = JSON.parse(localStorage.getItem(type));
+    if (!$.isArray(list)) {
+      list = [list];
+    }
     list_length = list.length;
     //Load into planZilla.o.[RELEASES|SPRINTS][BUG_ID].
     self.o[type] = {};
@@ -316,7 +319,8 @@ var planZilla = {
 
     //Go through all of the tickets
     $.each(self.bz_tickets, function (key, ticket) {
-      var blockedTicketsRemove = [];
+      var blockedTicketsRemove = [],
+        scrub = /.*(\d{4}.*)/;
       //if the ticket is a release or a handoff, don't display it  
       if (ticket.cf_issue_type !== 'RELEASE' && ticket.cf_issue_type !== 'SPRINT') {
         //go through its blocked tickets
@@ -326,13 +330,13 @@ var planZilla = {
             //remove it from its blocked list
             blockedTicketsRemove.push(value);
             //mark the release name
-            ticket.release_name = self.o[release][value].short_desc.replace('Search123_', '');
+            ticket.release_name = scrub.exec(self.o[release][value].short_desc)[1];
             ticket.release_id = value;
           }
           //if the blocked ticket is a sprint (repeat)
           if (self.o[sprint][value]) {
             blockedTicketsRemove.push(value);
-            ticket.sprint_name = self.o[sprint][value].short_desc.replace('Search123_', '');
+            ticket.sprint_name = scrub.exec(self.o[sprint][value].short_desc)[1];
             ticket.sprint_id = value;
           }
         });
@@ -496,53 +500,125 @@ var planZilla = {
         pZ_box = $(planZilla.create_dom.planZilla_box()),
         release = planZilla.o.sharer_id + '-' + planZilla.o.release_label,
         sprint = planZilla.o.sharer_id + '-' + planZilla.o.sprint_label,
+        ul = $('<ul/>'),
         dom = $('<div/>')
         .append($('<div/>', {
           'html': $('<h3/>', {
-            'text': 'Environment Selector'
+            'text': 'Select or Define Profile'
           })
         }));
+      //Section to load profiles
+      profiles = localStorage.getItem('profiles');
+      if (profiles) {
+        profiles = JSON.parse(profiles);
+        ul = $('<ul/>');
+        _.each(profiles, function (element, index, list) {
+          ul.append($('<li/>', {
+            text: element.name,
+            css: {
+              cursor: 'pointer'
+            },
+            click: function () {
+              planZilla.o.sharer_id = element.sharer_id;
+              planZilla.o.release_label = element.release_label;
+              planZilla.o.sprint_label = element.sprint_label;
+              //this is just copied from blelow - should be moved to function
+              localStorage.removeItem('issueID'); 
+              localStorage.removeItem('issueType'); 
+              planZilla.refreshLists(1, function() {
+                $('button.close').click();
+              });
+            }
+          }));
+        });
+        dom.append(ul);
+      }
+
 
       //Section to reload current view
       dom.append('<br><br>')
       .append('<label>Sharer ID: </label>')
       .append($('<input/>', {
             name: 'sharer_selector',
-            value: planZilla.o.sharer_id || '',
-            change: function () {
-              planZilla.o.sharer_id = $(this).val()
-              localStorage.setItem('sharer_id', planZilla.o.sharer_id); 
-            }
+            value: planZilla.o.sharer_id || ''
       }));
       dom.append('<br><br>')
       .append('<label>Release Label: </label>')
       .append($('<input/>', {
             name: 'release_selector',
-            value: planZilla.o.release_label || '',
-            change: function () {
-              planZilla.o.release_label = $(this).val()
-              localStorage.setItem('release_label', planZilla.o.release_label); 
-            }
+            value: planZilla.o.release_label || ''
       }));
       dom.append('<br><br>')
       .append('<label>Sprint Label: </label>')
       .append($('<input/>', {
             name: 'sprint_selector',
-            value: planZilla.o.sprint_label || '',
-            change: function () {
-              planZilla.o.sprint_label = $(this).val()
-              localStorage.setItem('sprint_label', planZilla.o.sprint_label); 
-            }
+            value: planZilla.o.sprint_label || ''
       }));
       dom.append('<br><br>')
-      .append('<label>Refresh: </label>')
+      .append('<label>Complete to Save Profile: </label>')
+      .append($('<input/>', {
+            name: 'profile',
+            value: ''
+      }));
+      dom.append('<br><br>')
       .append(function () {
         var 
-          domSelect = $($('<a/>', {
-            text: 'Click to refresh release and sprint list',
+          domSelect = $($('<button/>', {
+            text: 'Save and/or Refresh',
+            css: {
+              float: 'none'
+            },
             click: function(e) {
+              var profile, profiles, profile_name, exisiting_profiles;
               e.preventDefault();
+              //process sharer
+              planZilla.o.sharer_id = $('input[name=sharer_selector]').val()
+              localStorage.setItem('sharer_id', planZilla.o.sharer_id); 
+              //process release
+              planZilla.o.release_label = $('input[name=release_selector]').val()
+              localStorage.setItem('release_label', planZilla.o.release_label); 
+              //process sprint
+              planZilla.o.sprint_label = $('input[name=sprint_selector]').val()
+              localStorage.setItem('sprint_label', planZilla.o.sprint_label); 
+              //process profile
+              //replace spaces with underscores
+              profile_name = $('input[name=profile]').val()
+              if (profile_name)  {
+                profile_name.replace(/\s/g, '_');
+                profile = {
+                  name: profile_name,
+                  sharer_id: planZilla.o.sharer_id,
+                  release_label: planZilla.o.release_label,
+                  sprint_label:  planZilla.o.sprint_label
+                }
+                // Grab existing profiles
+                profiles = localStorage.getItem('profiles');
+                //if there is a profiles key in localStorage
+                if (profiles) {
+                  profiles = JSON.parse(profiles);
+                  // Look for existing name to update
+                  existingProfile = _.select(profiles, function (p) {
+                    return p.name === profile.name;
+                  });
+                  if (existingProfile[0]) {
+                    existingProfile[0] = profile;
+                  }
+                  else {
+                  // Add name to end of list
+                    profiles.push(profile);
+                  }
+                }
+                else {
+                // It doesn't exist in local Storage, so add it as an array
+                  profiles = [profile];
+                }
+
+                // Store back in localStorage
+                localStorage.setItem('profiles', JSON.stringify(profiles));
+              }
               // get new lists and reopen it
+              localStorage.removeItem('issueID'); 
+              localStorage.removeItem('issueType'); 
               planZilla.refreshLists(1, function() {
                 $('button.close').click();
               });

@@ -1,4 +1,12 @@
 starting from Version 0.1.8
+0.3.4
+Release and sprint names are auto scrubbed to remove anything prior to \d{4}
+You can now save profiles of different products.  Its not pretty, but it
+works.
+dwirenga has made SPRINTS an issue type available to all products, so you no
+longer need to have him create that for you.
+minor bug fixes
+
 0.3.3
 So now you can set the environment instead of being  forced to use Search123.
 The product manager should set tickets in bz that hold all the sprints and
