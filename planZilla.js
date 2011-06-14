@@ -954,6 +954,22 @@ var planZilla = {
         }
       }));
     }
+  },
+  'addJenkinsLinks': function () {
+    var dom = $('<div/>'), tests, whiteboard, value;
+    whiteboard = $('#status_whiteboard');
+    value = whiteboard.val();
+    if ( value ) {
+      //split the value by commas
+      tests = value.split(",");
+      _.each(tests, function(element) {
+        dom.append($('<a/>', {
+          href: 'http://b1.qa.valueclick.com:8080/job/' + encodeURIComponent(element),
+          text: element,
+        }));
+      });
+      $('#status_whiteboard').after(dom);
+    }
   }
 };
 
@@ -1036,5 +1052,6 @@ $(document).ready(function () {
     })
     .addClass('pZ_icon');
   planZilla.addReleaseImage();
+  planZilla.addJenkinsLinks();
   planZilla.run_once();
 });
