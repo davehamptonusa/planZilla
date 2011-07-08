@@ -639,7 +639,7 @@ var planZilla = {
         planZilla.o.issueType = localStorage.getItem('issueType');
         planZilla.o.issueID = localStorage.getItem('issueID');
         //Section to reload current view
-        if (planZilla.o.issueType) {
+        if (planZilla.o.issueType && planZilla.o.issueID) {
           dom.append('<label>Reload: </label>')
           .append(function () {
             var 
