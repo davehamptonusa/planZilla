@@ -95,7 +95,7 @@ var planZilla = {
     'NEED INFO': 'In Progress',
     'REOPENED': 'In Progress',
     'RESOLVED': 'Completed',
-    'VERIFED': 'Completed',
+    'VERIFIED': 'Completed',
     'CLOSED': 'Completed'
   },
   class_bz_num: /pZ_\d+/,
