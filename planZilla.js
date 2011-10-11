@@ -73,8 +73,8 @@ var planZilla = {
      bz_tickets = self.bz_tickets;
 
      tickets.sort(function (a,b) {
-        a = (((bz_tickets[a].priority).substring(1)) * 10 + severity[bz_tickets[a].bug_severity]);
-        b = (((bz_tickets[b].priority).substring(1)) * 10 + severity[bz_tickets[b].bug_severity]);
+        a = (((bz_tickets[a].priority || 'P5').substring(1)) * 10 + severity[bz_tickets[a].bug_severity]);
+        b = (((bz_tickets[b].priority || 'P5').substring(1)) * 10 + severity[bz_tickets[b].bug_severity]);
         return (a - b);
       });
   },
